@@ -1,0 +1,5 @@
+Migration
+1. Add-Migration AddedUser -Project DataNex.Data.MsSql -Args "--SqlServer"
+2. Update-Database -context MsSqlDbContext
+3. Script-Migration -i 0 -context ApplicationDbContext
+
