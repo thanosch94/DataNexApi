@@ -27,7 +27,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DataNex.Data.MsSql\DataNex.Data.MsSql.csproj" />
     <ProjectReference Include="..\DataNex.Data\DataNex.Data.csproj" />
     <ProjectReference Include="..\DataNex.Model\DataNex.Model.csproj" />
   </ItemGroup>
