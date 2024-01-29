@@ -9,22 +9,13 @@
     }
   },
   "profiles": {
-    //"http": {
-    //  "commandName": "Project",
-    //  "dotnetRunMessages": true,
-    //  "launchBrowser": true,
-    //  "launchUrl": "swagger",
-    //  "applicationUrl": "http://localhost:5062",
-    //  "environmentVariables": {
-    //    "ASPNETCORE_ENVIRONMENT": "Development"
-    //  }
-    },
+  
     "DataNexApi": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": false,
       "launchUrl": "index.html",
-      "applicationUrl": "https://localhost:5001;http://localhost:5000",
+      "applicationUrl":"http://localhost:5000",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }

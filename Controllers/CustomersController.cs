@@ -2,11 +2,14 @@
 using DataNex.Data;
 using DataNex.Model.Dtos;
 using DataNex.Model.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace DataNexApi.Controllers
 {
+    [Route("api/[controller]")]
+
     public class CustomersController : Controller
     {
         private ApplicationDbContext _context;
