@@ -1,11 +1,16 @@
 using DataNex.Data;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddJsonOptions(options =>
+ {
+     options.JsonSerializerOptions.PropertyNamingPolicy = null;
+ });
 builder.Services.AddCors();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
