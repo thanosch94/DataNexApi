@@ -75,7 +75,7 @@ namespace DataNexApi.Controllers
 
 
         [HttpPut("updatedto")]
-        public async Task<IActionResult> UpdateDto(CustomerDto dto)
+        public async Task<IActionResult> UpdateDto([FromBody] CustomerDto dto)
         {
             var data = await _context.Customers.FirstOrDefaultAsync(x => x.Id == dto.Id);
 
@@ -109,6 +109,7 @@ namespace DataNexApi.Controllers
 
             _context.Customers.Remove(data);
 
+            await _context.SaveChangesAsync();
             return Ok(data);
         }
     }
