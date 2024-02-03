@@ -29,6 +29,14 @@ namespace DataNexApi.Controllers
             return Ok(data);
         }
 
+        [HttpGet("getfromaade/{username}/{password}/{afmCalledFor}/{afmCalledBy}")]
+        public async Task<IActionResult> GetFromAade(string username, string password, string afmCalledFor, string? afmCalledBy)
+        {
+            var data = AadeService.GetDataFromAade(username, password, afmCalledBy, afmCalledFor);
+
+            return Ok(data);
+        }
+
         [HttpGet("getbyid/{id}")]
         public async Task<IActionResult> GetById(Guid id)
         {
@@ -58,14 +66,16 @@ namespace DataNexApi.Controllers
         {
             var data = new Customer();
             data.Name = customer.Name;
-            data.BAddress = customer.BAddress;
-            data.BRegion = customer.BRegion;
-            data.BPostalCode = customer.BPostalCode;
-            data.BCity = customer.BCity;
-            data.BCountry = customer.BCountry;
-            data.BPhone1 = customer.BPhone1;
-            data.BPhone2 = customer.BPhone2;
-            data.BEmail = customer.BEmail;
+            data.Address = customer.Address;
+            data.Region = customer.Region;
+            data.PostalCode = customer.PostalCode;
+            data.City = customer.City;
+            data.Country = customer.Country;
+            data.Phone1 = customer.Phone1;
+            data.Phone2 = customer.Phone2;
+            data.Email = customer.Email;
+            data.VatNumber = customer.VatNumber;
+            data.TaxOffice= customer.TaxOffice;
    
             _context.Customers.Add(data);
             await _context.SaveChangesAsync();
@@ -80,22 +90,16 @@ namespace DataNexApi.Controllers
             var data = await _context.Customers.FirstOrDefaultAsync(x => x.Id == dto.Id);
 
             data.Name = dto.Name;
-            data.BAddress = dto.BAddress;
-            data.BRegion = dto.BRegion;
-            data.BPostalCode = dto.BPostalCode;
-            data.BCity = dto.BCity;
-            data.BCountry = dto.BCountry;
-            data.BPhone1 = dto.BPhone1;
-            data.BPhone2 = dto.BPhone2;
-            data.BEmail = dto.BEmail;
-            data.SAddress = dto.SAddress;
-            data.SRegion = dto.SRegion;
-            data.SPostalCode = dto.SPostalCode;
-            data.SCity = dto.SCity;
-            data.SCountry = dto.SCountry;
-            data.SPhone1 = dto.SPhone1;
-            data.SPhone2 = dto.SPhone2;
-            data.SEmail = dto.SEmail;
+            data.Address = dto.Address;
+            data.Region = dto.Region;
+            data.PostalCode = dto.PostalCode;
+            data.City = dto.City;
+            data.Country = dto.Country;
+            data.Phone1 = dto.Phone1;
+            data.Phone2 = dto.Phone2;
+            data.Email = dto.Email;
+            data.VatNumber = dto.VatNumber;
+            data.TaxOffice = dto.TaxOffice;
 
             await _context.SaveChangesAsync();
 
