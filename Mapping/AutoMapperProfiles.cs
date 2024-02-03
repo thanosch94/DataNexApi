@@ -10,7 +10,9 @@ namespace DataNexApi.Mapping
         public AutoMapperProfiles()
         {
             CreateMap<User,UserDto>().ReverseMap();
-            CreateMap<Customer,CustomerDto>().ReverseMap(); 
+            CreateMap<Customer,CustomerDto>().ReverseMap();
+
+            CreateMap<Document, DocumentDto>().ReverseMap();
         }
     }
 }

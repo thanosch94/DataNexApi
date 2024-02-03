@@ -9,9 +9,8 @@ using System.Data.Common;
 
 namespace DataNexApi.Controllers
 {
-    [Route("api/[controller]")]
 
-    public class CustomersController : Controller
+    public class CustomersController : BaseController
     {
         private ApplicationDbContext _context;
         private IMapper _mapper;
