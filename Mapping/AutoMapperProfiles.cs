@@ -13,6 +13,12 @@ namespace DataNexApi.Mapping
             CreateMap<Customer,CustomerDto>().ReverseMap();
 
             CreateMap<Document, DocumentDto>().ReverseMap();
+            CreateMap<DocumentType, DocumentTypeDto>().ReverseMap();
+            CreateMap<Product, ProductDto>().ReverseMap();
+            CreateMap<Status, StatusDto>().ReverseMap();
+            CreateMap<Brand, BrandDto>().ReverseMap();
+
+
         }
     }
 }
