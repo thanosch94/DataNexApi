@@ -39,6 +39,17 @@ namespace DataNexApi.Controllers
             return Ok(dto);
         }
 
+        [HttpGet("getbysku/{sku}")]
+        public async Task<IActionResult> GetBySku(string sku)
+        {
+            var data = await _context.Products.Where(x => x.Sku == sku).FirstOrDefaultAsync();
+
+            var dto = _mapper.Map<ProductDto>(data);
+
+
+            return Ok(dto);
+        }
+
         [HttpGet("getlookup")]
         public async Task<IActionResult> GetLookup()
         {

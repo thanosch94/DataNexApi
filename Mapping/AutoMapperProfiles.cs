@@ -19,6 +19,7 @@ namespace DataNexApi.Mapping
             CreateMap<Brand, BrandDto>().ReverseMap();
             CreateMap<ProductSize, ProductSizeDto>().ReverseMap();
             CreateMap<DocumentProduct, DocumentProductDto>().ReverseMap();
+            CreateMap<ProductBarcode, ProductBarcodeDto>().ReverseMap();
 
 
         }

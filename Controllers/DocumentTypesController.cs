@@ -47,7 +47,8 @@ namespace DataNexApi.Controllers
             var data = new DocumentType();
 
             data.Name = documentType.Name;
-          
+            data.Description = documentType.Description;
+
             _context.DocumentTypes.Add(data);
             await _context.SaveChangesAsync();
 
@@ -64,7 +65,7 @@ namespace DataNexApi.Controllers
             var data = await _context.DocumentTypes.Where(x => x.Id == documentType.Id).FirstOrDefaultAsync();
 
             data.Name = documentType.Name;
-            
+            data.Description = documentType.Description;
             await _context.SaveChangesAsync();
 
             var dto = _mapper.Map<DocumentTypeDto>(data);
