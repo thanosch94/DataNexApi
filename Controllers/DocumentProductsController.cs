@@ -38,12 +38,48 @@ namespace DataNexApi.Controllers
             return Ok(dto);
         }
 
+
+
+        [HttpGet("getbybarcode/{barcode}")]
+        public async Task<IActionResult> GetByBarcode(string barcode)
+        {
+            var product = await _context.ProductBarcodes.Include(x => x.Product).Include(x=>x.Size).Where(x => x.Barcode == barcode).Select(x => new DocumentProductDto()
+            {
+                ProductId = x.ProductId,
+                ProductName = x.Product.Name,
+                Sku = x.Product.Sku,
+                ProductSizeId  =x.Size.Id,
+                SizeName = x.Size.Name,
+                Price = (decimal)x.Product.Price,
+                ProductQuantity = 1,
+                
+            }).FirstOrDefaultAsync();
+
+            return Ok(product);
+        }
+
+
         [HttpGet("getbydocumentid/{id}")]
         public async Task<IActionResult> GetByDocumentId(Guid id)
         {
-            var data = await _context.DocumentProducts.Where(x => x.DocumentId == id).FirstOrDefaultAsync();
+            var data = await _context.DocumentProducts.Include(x=>x.Product).ThenInclude(x=>x.ProductBarcodes).Include(x => x.ProductSize).Where(x => x.DocumentId == id).Select(x => new DocumentProductDto()
+            {
+                Id = x.Id,
+                DocumentId = x.DocumentId,
+                ProductId = x.ProductId,
+                ProductQuantity =x.ProductQuantity,
+                ProductSizeId = x.ProductSizeId,
+                SizeName = x.ProductSize.Name,
+                ProductName = x.Product.Name,
+                Sku =x.Product.Sku,
+                //TODO Add Barcode To DocumentProducts Model
+                Barcode = x.Product.ProductBarcodes.Where(y=>y.SizeId== x.ProductSizeId && y.ProductId==x.ProductId).FirstOrDefault().Barcode,
+                Price = (decimal)x.Product.Price,
+                RowTotal = x.ProductQuantity * (decimal)x.Product.Price
 
-            var dto = _mapper.Map<DocumentProductDto>(data);
+            }).ToListAsync();
+
+            var dto = _mapper.Map<List<DocumentProductDto>>(data);
 
 
             return Ok(dto);
