@@ -49,8 +49,19 @@ namespace DataNexApi.Controllers
                 ShippingCountry = x.ShippingCountry,
                 ShippingPhone1 =x.ShippingPhone1,
                 ShippingPhone2 =x.ShippingPhone2,
-                ShippingEmail = x.ShippingEmail
-
+                ShippingEmail = x.ShippingEmail,
+                UserText1 =x.UserText1,
+                UserText2 =x.UserText2,
+                UserText3 =x.UserText3,
+                UserText4 =x.UserText4,
+                UserNumber1 =x.UserNumber1,
+                UserNumber2 =x.UserNumber2,
+                UserNumber3 =x.UserNumber3,
+                UserNumber4 =x.UserNumber4,
+                UserDate1 =x.UserDate1,
+                UserDate2 =x.UserDate2,
+                UserDate3 =x.UserDate3,
+                UserDate4 =x.UserDate4,
 
             }).FirstOrDefaultAsync();
 
@@ -88,7 +99,18 @@ namespace DataNexApi.Controllers
             data.ShippingPhone1 = document.ShippingPhone1;
             data.ShippingPhone2 = document.ShippingPhone2;
             data.ShippingEmail = document.ShippingEmail;
-
+            data.UserText1 = document.UserText1;
+            data.UserText2 = document.UserText2;
+            data.UserText3 = document.UserText3;
+            data.UserText4 = document.UserText4;
+            data.UserNumber1 = document.UserNumber1;
+            data.UserNumber2 = document.UserNumber2;
+            data.UserNumber3 = document.UserNumber3;
+            data.UserNumber4 = document.UserNumber4;
+            data.UserDate1 = document.UserDate1;
+            data.UserDate2 = document.UserDate2;
+            data.UserDate3 = document.UserDate3;
+            data.UserDate4 = document.UserDate4;
             _context.Documents.Add(data);
             await _context.SaveChangesAsync();
 
@@ -132,7 +154,18 @@ namespace DataNexApi.Controllers
             data.ShippingPhone1 = document.ShippingPhone1;
             data.ShippingPhone2 = document.ShippingPhone2;
             data.ShippingEmail = document.ShippingEmail;
-
+            data.UserText1 = document.UserText1;
+            data.UserText2 = document.UserText2;
+            data.UserText3 = document.UserText3;
+            data.UserText4 = document.UserText4;
+            data.UserNumber1 = document.UserNumber1;
+            data.UserNumber2 = document.UserNumber2;
+            data.UserNumber3 = document.UserNumber3;
+            data.UserNumber4 = document.UserNumber4;
+            data.UserDate1 = document.UserDate1;
+            data.UserDate2 = document.UserDate2;
+            data.UserDate3 = document.UserDate3;
+            data.UserDate4 = document.UserDate4;
             await _context.SaveChangesAsync();
 
             var dto = _mapper.Map<DocumentDto>(data);
