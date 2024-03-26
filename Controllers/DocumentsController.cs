@@ -62,7 +62,7 @@ namespace DataNexApi.Controllers
         [HttpGet("getbyid/{id}")]
         public async Task<IActionResult> GetById(Guid id)
         {
-            var data = await _context.Documents.Include(x=>x.Customer).Include(x=>x.DocumentType).Where(x => x.Id == id).Select(x=>new DocumentDto()
+            var data = await _context.Documents.Include(x => x.DocumentStatus).Include(x=>x.Customer).Include(x=>x.DocumentType).Where(x => x.Id == id).Select(x=>new DocumentDto()
             {
                 Id = x.Id,
                 DocumentDateTime = x.DocumentDateTime,
@@ -70,6 +70,7 @@ namespace DataNexApi.Controllers
                 DocumentTypeName = x.DocumentType.Name,
                 DocumentNumber = x.DocumentNumber,
                 DocumentStatusId = x.DocumentStatusId,
+                DocumentStatusName = x.DocumentStatus.Name,
                 CustomerId =  x.CustomerId,
                 CustomerName = x.Customer.Name,
                 CustomerPhone1 =x.Customer.Phone1,
@@ -165,16 +166,7 @@ namespace DataNexApi.Controllers
 
             data.DocumentTypeId = document.DocumentTypeId;
             var source = await _context.Documents.Where(x => x.DocumentTypeId == document.DocumentTypeId).OrderByDescending(x => x.DocumentNumber).FirstOrDefaultAsync();
-            if (source != null)
-            {
-                data.DocumentNumber = source.DocumentNumber + 1;
-
-            }
-            else
-            {
-                data.DocumentNumber = 1;
-
-            }
+           
             data.CustomerId = document.CustomerId;
             data.DocumentStatusId = document.DocumentStatusId;
             data.DocumentTotal = document.DocumentTotal;
