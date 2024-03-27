@@ -71,7 +71,7 @@ namespace DataNexApi.Controllers
             data.Name = product.Name;
             data.Sku = product.Sku;
             data.Description = product.Description;
-            data.Image = product.Image;
+            data.ImagePath = product.ImagePath;
             data.Price = product.Price;
             data.BrandId = product.BrandId;
 
@@ -93,7 +93,7 @@ namespace DataNexApi.Controllers
             data.Name = product.Name;
             data.Sku = product.Sku;
             data.Description = product.Description;
-            data.Image = product.Image;
+            data.ImagePath = product.ImagePath;
             data.Price = product.Price;
             data.BrandId = product.BrandId;
 
