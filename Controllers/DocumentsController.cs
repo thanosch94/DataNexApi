@@ -169,7 +169,7 @@ namespace DataNexApi.Controllers
            
             data.CustomerId = document.CustomerId;
             data.DocumentStatusId = document.DocumentStatusId;
-            data.DocumentTotal = document.DocumentTotal;
+     
             data.ShippingAddress = document.ShippingAddress;
             data.ShippingRegion = document.ShippingRegion;
             data.ShippingPostalCode = document.ShippingPostalCode;
@@ -190,6 +190,14 @@ namespace DataNexApi.Controllers
             data.UserDate2 = document.UserDate2;
             data.UserDate3 = document.UserDate3;
             data.UserDate4 = document.UserDate4;
+
+            var documentProducts = await _context.DocumentProducts.Include(x=>x.Product).Where(x => x.DocumentId == data.Id).ToListAsync();
+            decimal total = 0;
+            foreach (var product in documentProducts)
+            {
+                total += (decimal)product.Product.Price;
+            }
+            data.DocumentTotal = total;
             await _context.SaveChangesAsync();
 
             var dto = _mapper.Map<DocumentDto>(data);
