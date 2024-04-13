@@ -1,4 +1,5 @@
 using DataNex.Data;
+using DataNexApi;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
@@ -19,7 +20,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
+builder.Services.AddExceptionHandler<DataNexApiExceptionHandler>();
 builder.Services.AddAutoMapper(typeof(Program));
 // Add services to the container.
 var app = builder.Build();
@@ -47,6 +48,8 @@ else
     app.UseCors(x => x.SetIsOriginAllowed(origin => true).AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 }
 app.UseAuthorization();
+
+app.UseExceptionHandler(o => { });
 
 app.MapControllers();
 

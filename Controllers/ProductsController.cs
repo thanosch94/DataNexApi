@@ -108,10 +108,10 @@ namespace DataNexApi.Controllers
         public async Task<IActionResult> DeleteById(Guid id)
         {
             var data = await _context.Products.FirstOrDefaultAsync(x => x.Id == id);
+         
+                _context.Products.Remove(data);
 
-            _context.Products.Remove(data);
-
-            await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync();
             return Ok(data);
         }
     }
