@@ -39,6 +39,7 @@ namespace DataNexApi.Controllers
         }
 
 
+        ///TODO move to the correct controller
 
         [HttpGet("getbybarcode/{barcode}")]
         public async Task<IActionResult> GetByBarcode(string barcode)
@@ -51,7 +52,7 @@ namespace DataNexApi.Controllers
                 ProductSizeId  =x.Size.Id,
                 SizeName = x.Size.Name,
                 Price = (decimal)x.Product.Price,
-                ProductQuantity = 1,
+                Quantity = 1,
                 
             }).FirstOrDefaultAsync();
 
@@ -67,15 +68,14 @@ namespace DataNexApi.Controllers
                 Id = x.Id,
                 DocumentId = x.DocumentId,
                 ProductId = x.ProductId,
-                ProductQuantity =x.ProductQuantity,
+                Quantity =x.Quantity,
                 ProductSizeId = x.ProductSizeId,
                 SizeName = x.ProductSize.Name,
                 ProductName = x.Product.Name,
                 Sku =x.Product.Sku,
-                //TODO Add Barcode To DocumentProducts Model
                 Barcode = x.Product.ProductBarcodes.Where(y=>y.SizeId== x.ProductSizeId && y.ProductId==x.ProductId).FirstOrDefault().Barcode,
-                Price = (decimal)x.Product.Price,
-                RowTotal = x.ProductQuantity * (decimal)x.Product.Price
+                Price = x.Price,
+                TotalPrice = x.TotalPrice
 
             }).ToListAsync();
 
@@ -91,7 +91,9 @@ namespace DataNexApi.Controllers
             var data = new DocumentProduct();
             data.DocumentId = documentProduct.DocumentId;
             data.ProductId = documentProduct.ProductId;
-            data.ProductQuantity = documentProduct.ProductQuantity;
+            data.Price = documentProduct.Price;
+            data.Quantity = documentProduct.Quantity;
+            data.TotalPrice = documentProduct.TotalPrice;
             data.ProductSizeId = documentProduct.ProductSizeId;
 
             _context.DocumentProducts.Add(data);
@@ -109,7 +111,9 @@ namespace DataNexApi.Controllers
 
             data.DocumentId = documentProduct.DocumentId;
             data.ProductId = documentProduct.ProductId;
-            data.ProductQuantity = documentProduct.ProductQuantity;
+            data.Price = documentProduct.Price;
+            data.Quantity = documentProduct.Quantity;
+            data.TotalPrice = documentProduct.TotalPrice;
             data.ProductSizeId = documentProduct.ProductSizeId;
 
 
