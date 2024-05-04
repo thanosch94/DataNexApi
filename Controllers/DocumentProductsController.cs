@@ -134,5 +134,27 @@ namespace DataNexApi.Controllers
             return Ok(data);
         }
 
+
+        [HttpGet("getpendingordersforproductid/{productId}")]
+        public async Task<IActionResult> GetPendingOrdersForProductId(Guid productId)
+        {
+            var data = await _context.DocumentProducts.Include(x=>x.Document).Include(x=>x.Product).Where(x=>x.ProductId==productId).Select(x=> new DocumentProductDto()
+            {
+               Id = x.Id,
+                DocumentDateString = x.Document.DocumentDateTime.DateTime.ToString("dd-MM-yyyy"),
+                DocumentDate = x.Document.DocumentDateTime,
+                Sku=x.Product.Sku,
+                DocumentCode = x.Document.DocumentType.Name+ "-"+ (x.Document.DocumentNumber).ToString().PadLeft(6,'0'),
+                CustomerName = x.Document.Customer.Name,
+                ProductId =  x.ProductId,
+                Price =  x.Price,
+                Quantity = x.Quantity,
+                TotalPrice = x.TotalPrice, 
+                ProductSizeId = x.ProductSizeId   
+            }).OrderBy(x=>x.DocumentDate).ToListAsync();
+
+            return Ok(data);
+        }
+        
     }
 }

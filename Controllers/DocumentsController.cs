@@ -169,7 +169,7 @@ namespace DataNexApi.Controllers
            
             data.CustomerId = document.CustomerId;
             data.DocumentStatusId = document.DocumentStatusId;
-     
+            data.DocumentTotal = document.DocumentTotal;
             data.ShippingAddress = document.ShippingAddress;
             data.ShippingRegion = document.ShippingRegion;
             data.ShippingPostalCode = document.ShippingPostalCode;
@@ -195,7 +195,7 @@ namespace DataNexApi.Controllers
             decimal total = 0;
             foreach (var product in documentProducts)
             {
-                total += (decimal)product.Product.Price;
+                total += (decimal)product.Product.Price*product.Quantity;
             }
             data.DocumentTotal = total;
             await _context.SaveChangesAsync();
