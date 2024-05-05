@@ -3,3 +3,7 @@ Migration
 2. Update-Database -context MsSqlDbContext
 3. Script-Migration -i 0 -context ApplicationDbContext
 
+MySQL
+1. Add-Migration AddPreviousMigrations -Project DataNex.Data -OutputDir MySqlMigrations -context MySqlDbContext -Args "--Mysql"
+2. Update-Database -context MySqlDbContext
+3. Script-Migration -i 0 -context MySqlDbContext
