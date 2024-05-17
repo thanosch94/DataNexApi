@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DataNexApi.Controllers
 {
-    public class ProductBarcodesController:BaseController
+    public class ProductBarcodesController : BaseController
     {
         private ApplicationDbContext _context;
         private IMapper _mapper;
@@ -48,18 +48,18 @@ namespace DataNexApi.Controllers
         [HttpGet("getbyproductid/{productid}")]
         public async Task<IActionResult> GetByProductId(Guid productid)
         {
-            var data = await _context.ProductBarcodes.Include(x=>x.Size).Where(x => x.ProductId == productid).Select(x=> new ProductBarcodeDto()
+            var data = await _context.ProductBarcodes.Include(x => x.Size).Where(x => x.ProductId == productid).Select(x => new ProductBarcodeDto()
             {
-                Id=x.Id,
+                Id = x.Id,
                 ProductId = x.ProductId,
                 SizeId = x.SizeId,
-                SizeName =x.Size.Name,
+                SizeName = x.Size.Name,
                 Barcode = x.Barcode,
 
 
             }).ToListAsync();
 
-           // var dto = _mapper.Map<ProductBarcodeDto>(data);
+            // var dto = _mapper.Map<ProductBarcodeDto>(data);
 
 
             return Ok(data);
@@ -75,8 +75,24 @@ namespace DataNexApi.Controllers
             data.SizeId = productBarcode.SizeId;
             data.Barcode = productBarcode.Barcode;
             //TODO Check if exists for size and productid
-            var exists = await  _context.ProductBarcodes.Where(x => x.ProductId == productBarcode.ProductId && x.SizeId == productBarcode.SizeId).FirstOrDefaultAsync();
-            if (exists==null)
+            if (data.Barcode == null||data.Barcode==string.Empty || data.SizeId == null)
+            {
+                return BadRequest("Barcode and Size cannot be empty");         
+            }
+            var sizeExists = await _context.ProductBarcodes.Where(x => x.ProductId == productBarcode.ProductId && x.SizeId == productBarcode.SizeId).FirstOrDefaultAsync();
+            var barcodeExists = await _context.ProductBarcodes.Where(x => x.Barcode == productBarcode.Barcode).FirstOrDefaultAsync();
+
+            if (barcodeExists!=null)
+            {
+                return BadRequest("Barcode exists");
+
+            }
+            else if (sizeExists != null)
+            {
+                return BadRequest("Record for Size already exists");
+
+            }
+            else
             {
                 _context.ProductBarcodes.Add(data);
                 await _context.SaveChangesAsync();
@@ -85,15 +101,7 @@ namespace DataNexApi.Controllers
 
                 return Ok(dto);
             }
-            else
-            {
-                var result = new
-                {
-                    result = "Record already exists"
-                };
-                return Ok(result);
-            }
-           
+
         }
 
 
@@ -105,11 +113,27 @@ namespace DataNexApi.Controllers
             data.ProductId = productBarcode.ProductId;
             data.SizeId = productBarcode.SizeId;
             data.Barcode = productBarcode.Barcode;
-            
-            await _context.SaveChangesAsync();
-            var dto = _mapper.Map<ProductBarcodeDto>(data);
+            if (data.Barcode == null || data.Barcode == string.Empty || data.SizeId == null)
+            {
+                return BadRequest("Barcode and Size cannot be empty");
+            }
+            var barcodeExists = await _context.ProductBarcodes.Where(x => x.Barcode == productBarcode.Barcode).FirstOrDefaultAsync();
 
-            return Ok(dto);
+            if (barcodeExists != null)
+            {
+                return BadRequest("Barcode exists");
+
+            }
+          
+            else
+            {
+                await _context.SaveChangesAsync();
+
+                var dto = _mapper.Map<ProductBarcodeDto>(data);
+
+                return Ok(dto);
+            }
+          
         }
 
         [HttpDelete("deletebyid/{id}")]

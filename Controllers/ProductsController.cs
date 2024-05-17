@@ -22,7 +22,17 @@ namespace DataNexApi.Controllers
         [HttpGet("getall")]
         public async Task<IActionResult> GetAll()
         {
-            var data = await _context.Products.ToListAsync();
+            var data = await _context.Products.Include(x=>x.Brand).Select(x => new ProductDto()
+            {
+                Id= x.Id,
+                Name = x.Name,
+                Sku = x.Sku,
+                Description = x.Description,
+                ImagePath = x.ImagePath,
+                Price = x.Price,
+                BrandId = x.BrandId,
+                BrandName = x.Brand.Name
+            }).ToListAsync();
 
             return Ok(data);
         }
@@ -31,7 +41,17 @@ namespace DataNexApi.Controllers
         [HttpGet("getbyid/{id}")]
         public async Task<IActionResult> GetById(Guid id)
         {
-            var data = await _context.Products.Where(x => x.Id == id).FirstOrDefaultAsync();
+            var data = await _context.Products.Include(x=>x.Brand).Where(x => x.Id == id).Select(x=> new ProductDto()
+            {
+                Id = x.Id,
+                Name = x.Name,
+                Sku = x.Sku,
+                Description = x.Description,
+                ImagePath = x.ImagePath,
+                Price = x.Price,
+                BrandId = x.BrandId,
+                BrandName = x.Brand.Name
+        }).FirstOrDefaultAsync();
 
             var dto = _mapper.Map<ProductDto>(data);
 
