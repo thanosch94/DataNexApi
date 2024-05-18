@@ -53,7 +53,9 @@ namespace DataNexApi.Controllers
             var data = await _context.Statuses.Where(x => x.Id == status.Id).FirstOrDefaultAsync();
 
             data.Name = status.Name;
+
             await _context.SaveChangesAsync();
+
             return Ok(data);
 
         }
@@ -66,6 +68,7 @@ namespace DataNexApi.Controllers
             _context.Statuses.Remove(data);
 
             await _context.SaveChangesAsync();
+
             return Ok(data);
         }
     }

@@ -61,9 +61,6 @@ namespace DataNexApi.Controllers
 
             }).ToListAsync();
 
-            // var dto = _mapper.Map<ProductBarcodeDto>(data);
-
-
             return Ok(data);
         }
 
@@ -76,27 +73,27 @@ namespace DataNexApi.Controllers
             data.ProductId = productBarcode.ProductId;
             data.SizeId = productBarcode.SizeId;
             data.Barcode = productBarcode.Barcode;
-            //TODO Check if exists for size and productid
+
             if (data.Barcode == null||data.Barcode==string.Empty || data.SizeId == null)
             {
                 return BadRequest("Barcode and Size cannot be empty");         
             }
+
             var sizeExists = await _context.ProductBarcodes.Where(x => x.ProductId == productBarcode.ProductId && x.SizeId == productBarcode.SizeId).FirstOrDefaultAsync();
             var barcodeExists = await _context.ProductBarcodes.Where(x => x.Barcode == productBarcode.Barcode).FirstOrDefaultAsync();
 
             if (barcodeExists!=null)
             {
                 return BadRequest("Barcode exists");
-
             }
             else if (sizeExists != null)
             {
                 return BadRequest("Record for Size already exists");
-
             }
             else
             {
                 _context.ProductBarcodes.Add(data);
+
                 await _context.SaveChangesAsync();
 
                 var dto = _mapper.Map<ProductBarcodeDto>(data);
@@ -115,18 +112,18 @@ namespace DataNexApi.Controllers
             data.ProductId = productBarcode.ProductId;
             data.SizeId = productBarcode.SizeId;
             data.Barcode = productBarcode.Barcode;
+
             if (data.Barcode == null || data.Barcode == string.Empty || data.SizeId == null)
             {
                 return BadRequest("Barcode and Size cannot be empty");
             }
+
             var barcodeExists = await _context.ProductBarcodes.Where(x => x.Barcode == productBarcode.Barcode).FirstOrDefaultAsync();
 
             if (barcodeExists != null)
             {
                 return BadRequest("Barcode exists");
-
             }
-          
             else
             {
                 await _context.SaveChangesAsync();
@@ -146,6 +143,7 @@ namespace DataNexApi.Controllers
             _context.ProductBarcodes.Remove(data);
 
             await _context.SaveChangesAsync();
+
             return Ok(data);
         }
     }

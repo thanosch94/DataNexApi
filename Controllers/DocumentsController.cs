@@ -19,8 +19,6 @@ namespace DataNexApi.Controllers
             _mapper = mapper;
         }
 
-
-
         [HttpGet("getall")]
         public async Task<IActionResult> GetAll()
         {
@@ -116,12 +114,10 @@ namespace DataNexApi.Controllers
             if (source!=null)
             {
                 data.DocumentNumber = source.DocumentNumber + 1;
-
             }
             else
             {
                 data.DocumentNumber = 1;
-
             }
             data.CustomerId = document.CustomerId;
             data.DocumentStatusId = document.DocumentStatusId;
@@ -146,7 +142,9 @@ namespace DataNexApi.Controllers
             data.UserDate2 = document.UserDate2;
             data.UserDate3 = document.UserDate3;
             data.UserDate4 = document.UserDate4;
+
             _context.Documents.Add(data);
+
             await _context.SaveChangesAsync();
 
             var dto = _mapper.Map<DocumentDto>(data);
@@ -215,6 +213,7 @@ namespace DataNexApi.Controllers
             _context.Documents.Remove(data);
 
             await _context.SaveChangesAsync();
+
             return Ok(data);
         }
     }

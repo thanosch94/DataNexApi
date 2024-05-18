@@ -24,9 +24,9 @@ namespace DataNexApi.Controllers
         [HttpGet("getall")]
         public async Task<IActionResult> GetAll()
         {
-            var data = await _context.Products.Include(x=>x.Brand).Select(x => new ProductDto()
+            var data = await _context.Products.Include(x => x.Brand).Select(x => new ProductDto()
             {
-                Id= x.Id,
+                Id = x.Id,
                 Name = x.Name,
                 Sku = x.Sku,
                 Description = x.Description,
@@ -43,7 +43,7 @@ namespace DataNexApi.Controllers
         [HttpGet("getbyid/{id}")]
         public async Task<IActionResult> GetById(Guid id)
         {
-            var data = await _context.Products.Include(x=>x.Brand).Where(x => x.Id == id).Select(x=> new ProductDto()
+            var data = await _context.Products.Include(x => x.Brand).Where(x => x.Id == id).Select(x => new ProductDto()
             {
                 Id = x.Id,
                 Name = x.Name,
@@ -53,7 +53,7 @@ namespace DataNexApi.Controllers
                 Price = x.Price,
                 BrandId = x.BrandId,
                 BrandName = x.Brand.Name
-        }).FirstOrDefaultAsync();
+            }).FirstOrDefaultAsync();
 
             var dto = _mapper.Map<ProductDto>(data);
 
@@ -67,7 +67,6 @@ namespace DataNexApi.Controllers
             var data = await _context.Products.Where(x => x.Sku == sku).FirstOrDefaultAsync();
 
             var dto = _mapper.Map<ProductDto>(data);
-
 
             return Ok(dto);
         }
@@ -97,8 +96,8 @@ namespace DataNexApi.Controllers
             data.Price = product.Price;
             data.BrandId = product.BrandId;
 
-
             _context.Products.Add(data);
+
             await _context.SaveChangesAsync();
 
             var dto = _mapper.Map<ProductDto>(data);
@@ -119,8 +118,8 @@ namespace DataNexApi.Controllers
             data.Price = product.Price;
             data.BrandId = product.BrandId;
 
-
             await _context.SaveChangesAsync();
+
             var dto = _mapper.Map<ProductDto>(data);
 
             return Ok(dto);
@@ -130,10 +129,11 @@ namespace DataNexApi.Controllers
         public async Task<IActionResult> DeleteById(Guid id)
         {
             var data = await _context.Products.FirstOrDefaultAsync(x => x.Id == id);
-         
-                _context.Products.Remove(data);
 
-                await _context.SaveChangesAsync();
+            _context.Products.Remove(data);
+
+            await _context.SaveChangesAsync();
+
             return Ok(data);
         }
     }

@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 namespace DataNexApi.Controllers
 {
     [Authorize]
-    public class DocumentProductsController:BaseController
+    public class DocumentProductsController : BaseController
     {
 
         private ApplicationDbContext _context;
@@ -46,16 +46,16 @@ namespace DataNexApi.Controllers
         [HttpGet("getbybarcode/{barcode}")]
         public async Task<IActionResult> GetByBarcode(string barcode)
         {
-            var product = await _context.ProductBarcodes.Include(x => x.Product).Include(x=>x.Size).Where(x => x.Barcode == barcode).Select(x => new DocumentProductDto()
+            var product = await _context.ProductBarcodes.Include(x => x.Product).Include(x => x.Size).Where(x => x.Barcode == barcode).Select(x => new DocumentProductDto()
             {
                 ProductId = x.ProductId,
                 ProductName = x.Product.Name,
                 Sku = x.Product.Sku,
-                ProductSizeId  =x.Size.Id,
+                ProductSizeId = x.Size.Id,
                 SizeName = x.Size.Name,
                 Price = (decimal)x.Product.Price,
                 Quantity = 1,
-                
+
             }).FirstOrDefaultAsync();
 
             return Ok(product);
@@ -65,17 +65,17 @@ namespace DataNexApi.Controllers
         [HttpGet("getbydocumentid/{id}")]
         public async Task<IActionResult> GetByDocumentId(Guid id)
         {
-            var data = await _context.DocumentProducts.Include(x=>x.Product).ThenInclude(x=>x.ProductBarcodes).Include(x => x.ProductSize).Where(x => x.DocumentId == id).Select(x => new DocumentProductDto()
+            var data = await _context.DocumentProducts.Include(x => x.Product).ThenInclude(x => x.ProductBarcodes).Include(x => x.ProductSize).Where(x => x.DocumentId == id).Select(x => new DocumentProductDto()
             {
                 Id = x.Id,
                 DocumentId = x.DocumentId,
                 ProductId = x.ProductId,
-                Quantity =x.Quantity,
+                Quantity = x.Quantity,
                 ProductSizeId = x.ProductSizeId,
                 SizeName = x.ProductSize.Name,
                 ProductName = x.Product.Name,
-                Sku =x.Product.Sku,
-                Barcode = x.Product.ProductBarcodes.Where(y=>y.SizeId== x.ProductSizeId && y.ProductId==x.ProductId).FirstOrDefault().Barcode,
+                Sku = x.Product.Sku,
+                Barcode = x.Product.ProductBarcodes.Where(y => y.SizeId == x.ProductSizeId && y.ProductId == x.ProductId).FirstOrDefault().Barcode,
                 Price = x.Price,
                 TotalPrice = x.TotalPrice
 
@@ -99,6 +99,7 @@ namespace DataNexApi.Controllers
             data.ProductSizeId = documentProduct.ProductSizeId;
 
             _context.DocumentProducts.Add(data);
+
             await _context.SaveChangesAsync();
 
             var dto = _mapper.Map<DocumentProductDto>(data);
@@ -118,8 +119,8 @@ namespace DataNexApi.Controllers
             data.TotalPrice = documentProduct.TotalPrice;
             data.ProductSizeId = documentProduct.ProductSizeId;
 
-
             await _context.SaveChangesAsync();
+
             var dto = _mapper.Map<DocumentProductDto>(data);
 
             return Ok(dto);
@@ -133,6 +134,7 @@ namespace DataNexApi.Controllers
             _context.DocumentProducts.Remove(data);
 
             await _context.SaveChangesAsync();
+
             return Ok(data);
         }
 
@@ -140,23 +142,23 @@ namespace DataNexApi.Controllers
         [HttpGet("getpendingordersforproductid/{productId}")]
         public async Task<IActionResult> GetPendingOrdersForProductId(Guid productId)
         {
-            var data = await _context.DocumentProducts.Include(x=>x.Document).Include(x=>x.Product).Where(x=>x.ProductId==productId).Select(x=> new DocumentProductDto()
+            var data = await _context.DocumentProducts.Include(x => x.Document).Include(x => x.Product).Where(x => x.ProductId == productId).Select(x => new DocumentProductDto()
             {
-               Id = x.Id,
+                Id = x.Id,
                 DocumentDateString = x.Document.DocumentDateTime.DateTime.ToString("dd-MM-yyyy"),
                 DocumentDate = x.Document.DocumentDateTime,
-                Sku=x.Product.Sku,
-                DocumentCode = x.Document.DocumentType.Name+ "-"+ (x.Document.DocumentNumber).ToString().PadLeft(6,'0'),
+                Sku = x.Product.Sku,
+                DocumentCode = x.Document.DocumentType.Name + "-" + (x.Document.DocumentNumber).ToString().PadLeft(6, '0'), //TODO save this to db as it is
                 CustomerName = x.Document.Customer.Name,
-                ProductId =  x.ProductId,
-                Price =  x.Price,
+                ProductId = x.ProductId,
+                Price = x.Price,
                 Quantity = x.Quantity,
-                TotalPrice = x.TotalPrice, 
-                ProductSizeId = x.ProductSizeId   
-            }).OrderBy(x=>x.DocumentDate).ToListAsync();
+                TotalPrice = x.TotalPrice,
+                ProductSizeId = x.ProductSizeId
+            }).OrderBy(x => x.DocumentDate).ToListAsync();
 
             return Ok(data);
         }
-        
+
     }
 }

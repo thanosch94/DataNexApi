@@ -78,6 +78,7 @@ namespace DataNexApi.Controllers
    
             _context.Customers.Add(data);
             await _context.SaveChangesAsync();
+
             var dto = _mapper.Map<CustomerDto>(data);
 
             return Ok(dto);
@@ -114,6 +115,7 @@ namespace DataNexApi.Controllers
             _context.Customers.Remove(data);
 
             await _context.SaveChangesAsync();
+
             return Ok(data);
         }
     }

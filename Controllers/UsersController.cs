@@ -72,12 +72,14 @@ namespace DataNexApi.Controllers
             data.Email = dto.Email;
             data.UserName = dto.UserName;
             data.UserRole = dto.UserRole;
+
             if (dto.Password!=null)
             {
                 data.PasswordHash = BCrypt.Net.BCrypt.EnhancedHashPassword(dto.Password);
-
             }
+
             await _context.SaveChangesAsync();
+
             var dtoData = _mapper.Map<UserDto>(data);
 
             return Ok(dtoData);
@@ -92,6 +94,7 @@ namespace DataNexApi.Controllers
             _context.Users.Remove(data);
 
             await _context.SaveChangesAsync();
+
             return Ok(data);
         }
     }

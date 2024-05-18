@@ -27,14 +27,12 @@ namespace DataNexApi.Controllers
             return Ok(data);
         }
 
-
         [HttpGet("getbyid/{id}")]
         public async Task<IActionResult> GetById(Guid id)
         {
             var data = await _context.ProductSizes.Where(x => x.Id == id).FirstOrDefaultAsync();
 
             var dto = _mapper.Map<ProductSizeDto>(data);
-
 
             return Ok(dto);
         }
@@ -59,6 +57,7 @@ namespace DataNexApi.Controllers
             data.Name = productSize.Name;
             
             _context.ProductSizes.Add(data);
+
             await _context.SaveChangesAsync();
 
             var dto = _mapper.Map<ProductSizeDto>(data);
@@ -74,6 +73,7 @@ namespace DataNexApi.Controllers
             data.Name = productSize.Name;
     
             await _context.SaveChangesAsync();
+
             var dto = _mapper.Map<ProductSizeDto>(data);
 
             return Ok(dto);
@@ -87,6 +87,7 @@ namespace DataNexApi.Controllers
             _context.ProductSizes.Remove(data);
 
             await _context.SaveChangesAsync();
+
             return Ok(data);
         }
     }

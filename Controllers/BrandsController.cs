@@ -35,7 +35,6 @@ namespace DataNexApi.Controllers
 
             var dto = _mapper.Map<BrandDto>(data);
 
-
             return Ok(dto);
         }
 
@@ -85,6 +84,7 @@ namespace DataNexApi.Controllers
             _context.Brands.Remove(data);
 
             await _context.SaveChangesAsync();
+
             return Ok(data);
         }
     }

@@ -21,8 +21,6 @@ namespace DataNexApi.Controllers
             _mapper = mapper;
         }
 
-
-
         [HttpGet("getall")]
         public async Task<IActionResult> GetAll()
         {
@@ -38,7 +36,6 @@ namespace DataNexApi.Controllers
 
             var dto = _mapper.Map<DocumentTypeDto>(data);
 
-
             return Ok(dto);
         }
 
@@ -52,6 +49,7 @@ namespace DataNexApi.Controllers
             data.Description = documentType.Description;
 
             _context.DocumentTypes.Add(data);
+
             await _context.SaveChangesAsync();
 
             var dto = _mapper.Map<DocumentTypeDto>(data);
@@ -68,6 +66,7 @@ namespace DataNexApi.Controllers
 
             data.Name = documentType.Name;
             data.Description = documentType.Description;
+
             await _context.SaveChangesAsync();
 
             var dto = _mapper.Map<DocumentTypeDto>(data);

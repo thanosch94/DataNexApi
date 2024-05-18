@@ -29,6 +29,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
    // options.UseMySql(builder.Configuration.GetConnectionString("MySqlConnection"), ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("MySqlConnection")));
 });
 
+// Configure authentication
 builder.Services.AddAuthentication(opt => {
     opt.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     opt.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -46,20 +47,7 @@ builder.Services.AddAuthentication(opt => {
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("=d*T-pAtiG-cEID=&8,^XVTSNE50.)|6Ch(PM~L&`A'y(mChC_.2mR|,h]-TM~9.Z$Pam.gz]ZH)HwP`!setATBPaV^2Wlq+~kdohCDo`H0BC8i[U}PY>V.fqHhZ#O"))
         };
     });
-// Configure authentication
-//builder.Services.AddAuthorization();
-//builder.Services.AddAuthentication().AddCookie(options =>
-//{
-//    options.Cookie.SameSite = SameSiteMode.None; // Allow cross-site cookies
-//    options.Cookie.HttpOnly = true;
-//    options.Cookie.Path = "/";
-//    options.Cookie.HttpOnly = true;
-//    options.Cookie.IsEssential = true;
 
-
-//});
-//builder.Services.AddIdentityCore<User>().AddEntityFrameworkStores<ApplicationDbContext>().AddApiEndpoints();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddExceptionHandler<DataNexApiExceptionHandler>();
@@ -96,5 +84,4 @@ app.UseAuthorization();
 app.UseExceptionHandler(o => { });
 
 app.MapControllers();
-//app.MapIdentityApi<User>();
 await app.RunAsync();
