@@ -2,11 +2,13 @@
 using DataNex.Data;
 using DataNex.Model.Dtos;
 using DataNex.Model.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace DataNexApi.Controllers
 {
+    [Authorize]
     public class StatusesController : BaseController
     {
         private ApplicationDbContext _context;

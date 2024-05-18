@@ -2,12 +2,14 @@
 using DataNex.Data;
 using DataNex.Model.Dtos;
 using DataNex.Model.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Xml.Linq;
 
 namespace DataNexApi.Controllers
 {
+    [Authorize]
     public class DocumentTypesController:BaseController
     {
 

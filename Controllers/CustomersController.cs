@@ -9,7 +9,7 @@ using System.Data.Common;
 
 namespace DataNexApi.Controllers
 {
-
+    [Authorize]
     public class CustomersController : BaseController
     {
         private ApplicationDbContext _context;

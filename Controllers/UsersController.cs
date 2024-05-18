@@ -2,11 +2,13 @@
 using DataNex.Data;
 using DataNex.Model.Dtos;
 using DataNex.Model.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace DataNexApi.Controllers
 {
+    [Authorize]
     public class UsersController : BaseController
     {
         private ApplicationDbContext _context;
@@ -40,12 +42,12 @@ namespace DataNexApi.Controllers
         {
             var data = new User();
 
-            var exists = await _context.Users.Where(x => x.Username == dto.Username).FirstOrDefaultAsync();
+            var exists = await _context.Users.Where(x => x.UserName == dto.UserName).FirstOrDefaultAsync();
             if (exists == null)
             {
                 data.Name = dto.Name;
                 data.Email = dto.Email;
-                data.Username = dto.Username;
+                data.UserName = dto.UserName;
                 data.UserRole = dto.UserRole;
                 data.PasswordHash = BCrypt.Net.BCrypt.EnhancedHashPassword(dto.Password);
                 _context.Users.Add(data);
@@ -68,7 +70,7 @@ namespace DataNexApi.Controllers
 
             data.Name = dto.Name;
             data.Email = dto.Email;
-            data.Username = dto.Username;
+            data.UserName = dto.UserName;
             data.UserRole = dto.UserRole;
             if (dto.Password!=null)
             {
