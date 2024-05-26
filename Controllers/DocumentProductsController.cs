@@ -100,8 +100,14 @@ namespace DataNexApi.Controllers
 
             _context.DocumentProducts.Add(data);
 
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
 
+            }
+            catch (Exception ex) 
+            { 
+            }
             var dto = _mapper.Map<DocumentProductDto>(data);
 
             return Ok(dto);
