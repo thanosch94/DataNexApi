@@ -11,6 +11,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using DataNexApi.Services;
+using DataNex.Model.Enums;
 
 namespace DataNexApi.Controllers
 {
@@ -41,7 +42,7 @@ namespace DataNexApi.Controllers
            
             if(success)
             {
-
+                LogService.CreateLog($"User \"{user.UserName}\" logged in successfully.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, user.Id, _context);
                 var userToReturn = new UserDto()
                 {
                     Id = user.Id,
@@ -49,7 +50,7 @@ namespace DataNexApi.Controllers
                     Email = user.Email,
                     UserName = user.UserName,
                     UserRole = user.UserRole,
-                    Token = TokenService.GenerateToken()
+                    Token = TokenService.GenerateToken(user)
                 };
                 apiResponse.Success = success;
                 apiResponse.Result = userToReturn;
@@ -58,6 +59,8 @@ namespace DataNexApi.Controllers
             }
             else
             {
+                LogService.CreateLog($"Failed login attempt \"{dto.UserName}\".", LogTypeEnum.Warning, LogOriginEnum.DataNexApp, null, _context); ;
+
                 return BadRequest("Username or Password is incorrect");
             }
 

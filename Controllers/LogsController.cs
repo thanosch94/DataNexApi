@@ -1,26 +1,36 @@
 ﻿using AutoMapper;
 using DataNex.Data;
+using DataNex.Model.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Extensions;
 
 namespace DataNexApi.Controllers
 {
     public class LogsController:BaseController
     {
         private ApplicationDbContext _context;
-        private IMapper _mapper;
-        public LogsController(ApplicationDbContext context, IMapper mapper)
+        public LogsController(ApplicationDbContext context)
         {
             _context = context;
-            _mapper = mapper;
         }
 
         [HttpGet("getall")]
         public async Task<IActionResult> GetAll()
         {
-            var data = await _context.Logs.ToListAsync();
+            var data = await _context.Logs.Select(x=> new LogDto()
+            {
+                Id = x.Id,
+                LogName = x.LogName,
+                DateAdded = x.DateAdded,
+                AddedDateTimeFormatted = x.DateAdded.ToString("yyyy/MM/dd HH:mm:ss"),
+                LogTypeName = x.LogType.GetDisplayName(),
+                LogOriginName = x.LogOrigin.GetDisplayName()
+                
 
-            return Ok(data);
+            }).ToListAsync();
+
+            return Ok(data.OrderByDescending(x => x.DateAdded));
         }
     }
 }

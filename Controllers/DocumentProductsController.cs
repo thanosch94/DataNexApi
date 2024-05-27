@@ -1,10 +1,13 @@
 ﻿using AutoMapper;
 using DataNex.Data;
 using DataNex.Model.Dtos;
+using DataNex.Model.Enums;
 using DataNex.Model.Models;
+using DataNexApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 
 namespace DataNexApi.Controllers
 {
@@ -86,10 +89,12 @@ namespace DataNexApi.Controllers
 
             return Ok(dto);
         }
+
         [HttpPost("insertdto")]
         public async Task<IActionResult> InsertDto([FromBody] DocumentProductDto documentProduct)
-
         {
+            var actionUser = await GetActionUser();
+
             var data = new DocumentProduct();
             data.DocumentId = documentProduct.DocumentId;
             data.ProductId = documentProduct.ProductId;
@@ -97,16 +102,20 @@ namespace DataNexApi.Controllers
             data.Quantity = documentProduct.Quantity;
             data.TotalPrice = documentProduct.TotalPrice;
             data.ProductSizeId = documentProduct.ProductSizeId;
+            data.UserAdded = actionUser.Id;
 
             _context.DocumentProducts.Add(data);
 
             try
             {
                 await _context.SaveChangesAsync();
+                LogService.CreateLog($"Document product inserted by \"{actionUser.UserName}\". Document product: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
             }
             catch (Exception ex) 
-            { 
+            {
+                LogService.CreateLog($"Document product could not be inserted by \"{actionUser.UserName}\". Document product: {JsonConvert.SerializeObject(data)}  Error:{ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+
             }
             var dto = _mapper.Map<DocumentProductDto>(data);
 
@@ -116,6 +125,8 @@ namespace DataNexApi.Controllers
         [HttpPut("updatedto")]
         public async Task<IActionResult> UpdateDto([FromBody] DocumentProductDto documentProduct)
         {
+            var actionUser = await GetActionUser();
+
             var data = await _context.DocumentProducts.FirstOrDefaultAsync(x => x.Id == documentProduct.Id);
 
             data.DocumentId = documentProduct.DocumentId;
@@ -125,7 +136,17 @@ namespace DataNexApi.Controllers
             data.TotalPrice = documentProduct.TotalPrice;
             data.ProductSizeId = documentProduct.ProductSizeId;
 
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+                LogService.CreateLog($"Document product updated by \"{actionUser.UserName}\". Document product: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+
+            }
+            catch (Exception ex)
+            {
+                LogService.CreateLog($"Document product could not be updated by \"{actionUser.UserName}\". Document product: {JsonConvert.SerializeObject(data)}  Error:{ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+
+            }
 
             var dto = _mapper.Map<DocumentProductDto>(data);
 
@@ -135,12 +156,20 @@ namespace DataNexApi.Controllers
         [HttpDelete("deletebyid/{id}")]
         public async Task<IActionResult> DeleteById(Guid id)
         {
+            var actionUser = await GetActionUser();
+
             var data = await _context.DocumentProducts.FirstOrDefaultAsync(x => x.Id == id);
+            try
+            {
+                _context.DocumentProducts.Remove(data);
+                await _context.SaveChangesAsync();
+                LogService.CreateLog($"Document Product deleted by \"{actionUser.UserName}\"  Document Product: {JsonConvert.SerializeObject(data)}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
-            _context.DocumentProducts.Remove(data);
-
-            await _context.SaveChangesAsync();
-
+            }
+            catch (Exception ex)
+            {
+                LogService.CreateLog($"Document Product could not be deleted by \"{actionUser.UserName}\"  Document Product: {JsonConvert.SerializeObject(data)} Error:{ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+            }
             return Ok(data);
         }
 

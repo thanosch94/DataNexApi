@@ -1,10 +1,13 @@
 ﻿using AutoMapper;
 using DataNex.Data;
 using DataNex.Model.Dtos;
+using DataNex.Model.Enums;
 using DataNex.Model.Models;
+using DataNexApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 
 namespace DataNexApi.Controllers
 {
@@ -51,14 +54,23 @@ namespace DataNexApi.Controllers
 
         [HttpPost("insertdto")]
         public async Task<IActionResult> InsertDto([FromBody] ProductSizeDto productSize)
-
         {
+            var actionUser = await GetActionUser();
+
             var data = new ProductSize();
             data.Name = productSize.Name;
-            
-            _context.ProductSizes.Add(data);
+            data.UserAdded = actionUser.Id;
 
-            await _context.SaveChangesAsync();
+            try
+            {
+                _context.ProductSizes.Add(data);
+                await _context.SaveChangesAsync();
+                LogService.CreateLog($"Product Size \"{data.Name}\" inserted by \"{actionUser.UserName}\". Product Size: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+            }
+            catch (Exception ex) 
+            {
+                LogService.CreateLog($"Product Size \"{data.Name}\" could not be inserted by \"{actionUser.UserName}\". Product Size: {JsonConvert.SerializeObject(data)} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+            }
 
             var dto = _mapper.Map<ProductSizeDto>(data);
 
@@ -68,11 +80,21 @@ namespace DataNexApi.Controllers
         [HttpPut("updatedto")]
         public async Task<IActionResult> UpdateDto([FromBody] ProductSizeDto productSize)
         {
+            var actionUser = await GetActionUser();
+
             var data = await _context.ProductSizes.FirstOrDefaultAsync(x => x.Id == productSize.Id);
 
             data.Name = productSize.Name;
-    
-            await _context.SaveChangesAsync();
+            
+            try
+            {
+                await _context.SaveChangesAsync();
+                LogService.CreateLog($"Product Size \"{data.Name}\" updated by \"{actionUser.UserName}\". Product Size: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+            }
+            catch (Exception ex)
+            {
+                LogService.CreateLog($"Product Size could not be updated by \"{actionUser.UserName}\". Product Size: {JsonConvert.SerializeObject(data)} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+            }
 
             var dto = _mapper.Map<ProductSizeDto>(data);
 
@@ -82,12 +104,20 @@ namespace DataNexApi.Controllers
         [HttpDelete("deletebyid/{id}")]
         public async Task<IActionResult> DeleteById(Guid id)
         {
+            var actionUser = await GetActionUser();
+
             var data = await _context.ProductSizes.FirstOrDefaultAsync(x => x.Id == id);
 
-            _context.ProductSizes.Remove(data);
-
-            await _context.SaveChangesAsync();
-
+            try
+            {
+                _context.ProductSizes.Remove(data);
+                await _context.SaveChangesAsync();
+                LogService.CreateLog($"Product Size \"{data.Name}\" deleted by \"{actionUser.UserName}\". Product Size: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+            }
+            catch (Exception ex)
+            {
+                LogService.CreateLog($"Product Size \"{data.Name}\" could not be deleted by \"{actionUser.UserName}\". Product Size: {JsonConvert.SerializeObject(data)} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+            }
             return Ok(data);
         }
     }

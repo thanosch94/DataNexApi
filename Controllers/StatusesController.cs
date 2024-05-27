@@ -1,10 +1,13 @@
 ﻿using AutoMapper;
 using DataNex.Data;
 using DataNex.Model.Dtos;
+using DataNex.Model.Enums;
 using DataNex.Model.Models;
+using DataNexApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 
 namespace DataNexApi.Controllers
 {
@@ -30,14 +33,28 @@ namespace DataNexApi.Controllers
         [HttpPost("insertdto")]
         public async Task<IActionResult> InsertDto([FromBody] StatusDto status)
         {
+            var actionUser = await GetActionUser();
+
             var data = new Status();
 
             var exists = await _context.Statuses.Where(x => x.Name == status.Name).FirstOrDefaultAsync();
             if (exists == null)
             {
                 data.Name = status.Name;
-                _context.Statuses.Add(data);
-                await _context.SaveChangesAsync();
+                data.UserAdded = actionUser.Id;
+
+                try
+                {
+                    _context.Statuses.Add(data);
+                    await _context.SaveChangesAsync();
+                    LogService.CreateLog($"Status \"{data.Name}\" inserted by \"{actionUser.UserName}\". Status: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+
+                }
+                catch (Exception ex) 
+                {
+                    LogService.CreateLog($"Status \"{data.Name}\" could not be inserted by \"{actionUser.UserName}\". Status: {JsonConvert.SerializeObject(data)} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                }
+
                 return Ok(data);
             }
             else
@@ -50,11 +67,23 @@ namespace DataNexApi.Controllers
         [HttpPut("updatedto")]
         public async Task<IActionResult> UpdateDto([FromBody] StatusDto status)
         {
+            var actionUser = await GetActionUser();
+
             var data = await _context.Statuses.Where(x => x.Id == status.Id).FirstOrDefaultAsync();
 
             data.Name = status.Name;
 
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+                LogService.CreateLog($"Status \"{data.Name}\" updated by \"{actionUser.UserName}\". Status: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+
+            }
+            catch (Exception ex)
+            {
+                LogService.CreateLog($"Status \"{data.Name}\" could not be updated by \"{actionUser.UserName}\". Status: {JsonConvert.SerializeObject(data)} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+
+            }
 
             return Ok(data);
 
@@ -63,13 +92,23 @@ namespace DataNexApi.Controllers
         [HttpDelete("deletebyid/{id}")]
         public async Task<IActionResult> DeleteById(Guid id)
         {
+            var actionUser = await GetActionUser();
+
             var data = await _context.Statuses.FirstOrDefaultAsync(x => x.Id == id);
 
-            _context.Statuses.Remove(data);
+            try
+            {
+                _context.Statuses.Remove(data);
 
-            await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync();
+                LogService.CreateLog($"Status \"{data.Name}\" deleted by \"{actionUser.UserName}\". Status: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
-            return Ok(data);
+            }
+            catch (Exception ex)
+            {
+                LogService.CreateLog($"Status \"{data.Name}\" could not be deleted by \"{actionUser.UserName}\". Status: {JsonConvert.SerializeObject(data)} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+            }
+                return Ok(data);
         }
     }
 }

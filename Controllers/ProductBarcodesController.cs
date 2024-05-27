@@ -1,10 +1,13 @@
 ﻿using AutoMapper;
 using DataNex.Data;
 using DataNex.Model.Dtos;
+using DataNex.Model.Enums;
 using DataNex.Model.Models;
+using DataNexApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 
 namespace DataNexApi.Controllers
 {
@@ -68,11 +71,14 @@ namespace DataNexApi.Controllers
         public async Task<IActionResult> InsertDto([FromBody] ProductBarcodeDto productBarcode)
 
         {
+            var actionUser = await GetActionUser();
+
             var data = new ProductBarcode();
 
             data.ProductId = productBarcode.ProductId;
             data.SizeId = productBarcode.SizeId;
             data.Barcode = productBarcode.Barcode;
+            data.UserAdded = actionUser.Id;
 
             if (data.Barcode == null||data.Barcode==string.Empty || data.SizeId == null)
             {
@@ -92,9 +98,17 @@ namespace DataNexApi.Controllers
             }
             else
             {
-                _context.ProductBarcodes.Add(data);
 
-                await _context.SaveChangesAsync();
+                try
+                {                
+                    _context.ProductBarcodes.Add(data);
+                    await _context.SaveChangesAsync();
+                    LogService.CreateLog($"Product Barcode  \"{data.Barcode}\" inserted by \"{actionUser.UserName}\". Product Barcode: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                }
+                catch (Exception ex)
+                {
+                    LogService.CreateLog($"Product Barcode could not be inserted by \"{actionUser.UserName}\". Product Barcode: {JsonConvert.SerializeObject(data)} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                }
 
                 var dto = _mapper.Map<ProductBarcodeDto>(data);
 
@@ -107,6 +121,8 @@ namespace DataNexApi.Controllers
         [HttpPut("updatedto")]
         public async Task<IActionResult> UpdateDto([FromBody] ProductBarcodeDto productBarcode)
         {
+            var actionUser = await GetActionUser();
+
             var data = await _context.ProductBarcodes.FirstOrDefaultAsync(x => x.Id == productBarcode.Id);
 
             data.ProductId = productBarcode.ProductId;
@@ -126,7 +142,16 @@ namespace DataNexApi.Controllers
             }
             else
             {
-                await _context.SaveChangesAsync();
+                try
+                {
+                    await _context.SaveChangesAsync();
+                    LogService.CreateLog($"Product Barcode \"{data.Barcode}\" updated by \"{actionUser.UserName}\". Product Barcode: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                }
+                catch (Exception ex)
+                {
+                    LogService.CreateLog($"Product Barcode could not be updated by \"{actionUser.UserName}\". Product Barcode: {JsonConvert.SerializeObject(data)} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+
+                }
 
                 var dto = _mapper.Map<ProductBarcodeDto>(data);
 
@@ -138,12 +163,22 @@ namespace DataNexApi.Controllers
         [HttpDelete("deletebyid/{id}")]
         public async Task<IActionResult> DeleteById(Guid id)
         {
+            var actionUser = await GetActionUser();
+
             var data = await _context.ProductBarcodes.FirstOrDefaultAsync(x => x.Id == id);
 
-            _context.ProductBarcodes.Remove(data);
+            try
+            {
+                _context.ProductBarcodes.Remove(data);
+                await _context.SaveChangesAsync();
+                LogService.CreateLog($"Product Barcode \"{data.Barcode}\" deleted by \"{actionUser.UserName}\"  Product Barcode: {JsonConvert.SerializeObject(data)}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
-            await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                LogService.CreateLog($"Product Barcode \"{data.Barcode}\" could not be deleted by \"{actionUser.UserName}\"  Product Barcode: {JsonConvert.SerializeObject(data)} Error:{ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
+            }
             return Ok(data);
         }
     }

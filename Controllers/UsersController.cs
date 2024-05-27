@@ -1,10 +1,13 @@
 ﻿using AutoMapper;
 using DataNex.Data;
 using DataNex.Model.Dtos;
+using DataNex.Model.Enums;
 using DataNex.Model.Models;
+using DataNexApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 
 namespace DataNexApi.Controllers
 {
@@ -40,6 +43,8 @@ namespace DataNexApi.Controllers
         [HttpPost("insertdto")]
         public async Task<IActionResult> InsertDto([FromBody] UserDto dto)
         {
+            var actionUser = await GetActionUser();
+
             var data = new User();
 
             var exists = await _context.Users.Where(x => x.UserName == dto.UserName).FirstOrDefaultAsync();
@@ -50,8 +55,21 @@ namespace DataNexApi.Controllers
                 data.UserName = dto.UserName;
                 data.UserRole = dto.UserRole;
                 data.PasswordHash = BCrypt.Net.BCrypt.EnhancedHashPassword(dto.Password);
-                _context.Users.Add(data);
-                await _context.SaveChangesAsync();
+                data.UserAdded = actionUser.Id;
+
+                try
+                {
+                     _context.Users.Add(data);
+                     await _context.SaveChangesAsync();
+                    LogService.CreateLog($"User \"{data.Name}\" inserted by \"{actionUser.UserName}\". User: {data.Id}, {data.Name}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+
+                }
+                catch (Exception ex)
+                {
+                    LogService.CreateLog($"User \"{data.Name}\" could not be inserted by \"{actionUser.UserName}\". User: {data.Id}, {data.Name} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+
+                }
+
                 var dtoData = _mapper.Map<UserDto>(data);
 
                 return Ok(dtoData);
@@ -66,6 +84,8 @@ namespace DataNexApi.Controllers
         [HttpPut("updatedto")]
         public async Task<IActionResult> UpdateDto([FromBody] UserDto dto)
         {
+            var actionUser = await GetActionUser();
+
             var data = await _context.Users.Where(x => x.Id == dto.Id).FirstOrDefaultAsync();
 
             data.Name = dto.Name;
@@ -78,7 +98,17 @@ namespace DataNexApi.Controllers
                 data.PasswordHash = BCrypt.Net.BCrypt.EnhancedHashPassword(dto.Password);
             }
 
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+                LogService.CreateLog($"User \"{data.Name}\" updated by \"{actionUser.UserName}\". User: {data.Id}, {data.Name}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+
+            }
+            catch (Exception ex)
+            {
+                LogService.CreateLog($"User \"{data.Name}\" could not be updated by \"{actionUser.UserName}\"  User: {data.Id}, {data.Name} Error: {ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+
+            }
 
             var dtoData = _mapper.Map<UserDto>(data);
 
@@ -89,12 +119,23 @@ namespace DataNexApi.Controllers
         [HttpDelete("deletebyid/{id}")]
         public async Task<IActionResult> DeleteById(Guid id)
         {
+            var actionUser = await GetActionUser();
+
             var data = await _context.Users.FirstOrDefaultAsync(x => x.Id == id);
 
             _context.Users.Remove(data);
 
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+                LogService.CreateLog($"User \"{data.Name}\" deleted by \"{actionUser.UserName}\". User: {data.Id}, {data.Name}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
+            }
+            catch (Exception ex)
+            {
+                LogService.CreateLog($"User \"{data.Name}\" could not be deleted by \"{actionUser.UserName}\"  User: {data.Id}, {data.Name} Error: {ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+
+            }
             return Ok(data);
         }
     }

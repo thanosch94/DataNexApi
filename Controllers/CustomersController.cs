@@ -1,10 +1,13 @@
 ﻿using AutoMapper;
 using DataNex.Data;
 using DataNex.Model.Dtos;
+using DataNex.Model.Enums;
 using DataNex.Model.Models;
+using DataNexApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using System.Data.Common;
 
 namespace DataNexApi.Controllers
@@ -39,7 +42,7 @@ namespace DataNexApi.Controllers
         [HttpGet("getbyid/{id}")]
         public async Task<IActionResult> GetById(Guid id)
         {
-            var data = await _context.Customers.Where(x=>x.Id==id).FirstOrDefaultAsync();
+            var data = await _context.Customers.Where(x => x.Id == id).FirstOrDefaultAsync();
 
             var dto = _mapper.Map<CustomerDto>(data);
 
@@ -60,9 +63,11 @@ namespace DataNexApi.Controllers
         }
 
         [HttpPost("insertdto")]
-        public async Task<IActionResult> InsertDto([FromBody]CustomerDto customer)
+        public async Task<IActionResult> InsertDto([FromBody] CustomerDto customer)
 
         {
+            var actionUser = await GetActionUser();
+
             var data = new Customer();
             data.Name = customer.Name;
             data.Address = customer.Address;
@@ -74,10 +79,21 @@ namespace DataNexApi.Controllers
             data.Phone2 = customer.Phone2;
             data.Email = customer.Email;
             data.VatNumber = customer.VatNumber;
-            data.TaxOffice= customer.TaxOffice;
-   
-            _context.Customers.Add(data);
-            await _context.SaveChangesAsync();
+            data.TaxOffice = customer.TaxOffice;
+            data.UserAdded = actionUser.Id;
+
+            try
+            {
+                _context.Customers.Add(data);
+                await _context.SaveChangesAsync();
+                LogService.CreateLog($"Customer \"{data.Name}\" inserted by \"{actionUser.UserName}\". Customer: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+
+            }
+            catch (Exception ex)
+            {
+                LogService.CreateLog($"Customer \"{data.Name}\" could not be inserted by \"{actionUser.UserName}\" Customer: {JsonConvert.SerializeObject(data)} Error:{ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+            }
+
 
             var dto = _mapper.Map<CustomerDto>(data);
 
@@ -88,6 +104,8 @@ namespace DataNexApi.Controllers
         [HttpPut("updatedto")]
         public async Task<IActionResult> UpdateDto([FromBody] CustomerDto dto)
         {
+            var actionUser = await GetActionUser();
+
             var data = await _context.Customers.FirstOrDefaultAsync(x => x.Id == dto.Id);
 
             data.Name = dto.Name;
@@ -102,7 +120,17 @@ namespace DataNexApi.Controllers
             data.VatNumber = dto.VatNumber;
             data.TaxOffice = dto.TaxOffice;
 
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+                LogService.CreateLog($"Customer \"{data.Name}\" updated by \"{actionUser.UserName}\". Customer: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+
+            }
+            catch (Exception ex)
+            {
+                LogService.CreateLog($"Customer \"{data.Name}\" could not be updated by \"{actionUser.UserName}\" Error:{ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+
+            }
 
             return Ok(data);
         }
@@ -110,11 +138,23 @@ namespace DataNexApi.Controllers
         [HttpDelete("deletebyid/{id}")]
         public async Task<IActionResult> DeleteById(Guid id)
         {
+            var actionUser = await GetActionUser();
+
             var data = await _context.Customers.FirstOrDefaultAsync(x => x.Id == id);
 
             _context.Customers.Remove(data);
 
-            await _context.SaveChangesAsync();
+            try
+            {
+                _context.Customers.Remove(data);
+                await _context.SaveChangesAsync();
+                LogService.CreateLog($"Customer \"{data.Name}\" deleted by \"{actionUser.UserName}\"  Customer: {JsonConvert.SerializeObject(data)}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+
+            }
+            catch (Exception ex)
+            {
+                LogService.CreateLog($"Customer \"{data.Name}\" could not be deleted by \"{actionUser.UserName}\"  Customer: {JsonConvert.SerializeObject(data)} Error:{ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+            }
 
             return Ok(data);
         }

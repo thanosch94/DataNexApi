@@ -1,10 +1,13 @@
 ﻿using AutoMapper;
 using DataNex.Data;
 using DataNex.Model.Dtos;
+using DataNex.Model.Enums;
 using DataNex.Model.Models;
+using DataNexApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using System.Xml.Linq;
 
 namespace DataNexApi.Controllers
@@ -43,14 +46,25 @@ namespace DataNexApi.Controllers
         public async Task<IActionResult> InsertDto([FromBody] DocumentTypeDto documentType)
 
         {
+            var actionUser = await GetActionUser();
+
             var data = new DocumentType();
 
             data.Name = documentType.Name;
             data.Description = documentType.Description;
+            data.UserAdded = actionUser.Id;
 
-            _context.DocumentTypes.Add(data);
+            try
+            {
+                _context.DocumentTypes.Add(data);
+                await _context.SaveChangesAsync();
+                LogService.CreateLog($"Document Type \"{data.Name}\" inserted by \"{actionUser.UserName}\". Document Type: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+            }
+            catch (Exception ex)
+            {
+                LogService.CreateLog($"Document Type \"{data.Name}\" could not be inserted by \"{actionUser.UserName}\"  Document Type: {JsonConvert.SerializeObject(data)} Error: {ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
-            await _context.SaveChangesAsync();
+            }
 
             var dto = _mapper.Map<DocumentTypeDto>(data);
 
@@ -60,14 +74,25 @@ namespace DataNexApi.Controllers
 
         [HttpPut("updatedto")]
         public async Task<IActionResult> UpdatetDto([FromBody] DocumentTypeDto documentType)
-
         {
+            var actionUser = await GetActionUser();
+
             var data = await _context.DocumentTypes.Where(x => x.Id == documentType.Id).FirstOrDefaultAsync();
 
             data.Name = documentType.Name;
             data.Description = documentType.Description;
 
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+                LogService.CreateLog($"Document Type \"{data.Name}\" updated by \"{actionUser.UserName}\". Document Type: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+
+            }
+            catch (Exception ex)
+            {
+                LogService.CreateLog($"Document Type \"{data.Name}\" could not be updated by \"{actionUser.UserName}\"  Document Type: {JsonConvert.SerializeObject(data)} Error: {ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+
+            }
 
             var dto = _mapper.Map<DocumentTypeDto>(data);
 
@@ -77,12 +102,22 @@ namespace DataNexApi.Controllers
         [HttpDelete("deletebyid/{id}")]
         public async Task<IActionResult> DeleteById(Guid id)
         {
+            var actionUser = await GetActionUser();
+
             var data = await _context.DocumentTypes.FirstOrDefaultAsync(x => x.Id == id);
 
-            _context.DocumentTypes.Remove(data);
+            try
+            {
+                _context.DocumentTypes.Remove(data);
+                await _context.SaveChangesAsync();
+                LogService.CreateLog($"Document Type \"{data.Name}\" deleted by \"{actionUser.UserName}\"  Document Type: {JsonConvert.SerializeObject(data)}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
-            await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                LogService.CreateLog($"Document Type \"{data.Name}\" could not be deleted by \"{actionUser.UserName}\"  Document Type: {JsonConvert.SerializeObject(data)} Error:{ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
+            }
             var dto = _mapper.Map<DocumentTypeDto>(data);
 
             return Ok(dto);

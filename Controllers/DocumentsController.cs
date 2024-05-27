@@ -1,10 +1,13 @@
 ﻿using AutoMapper;
 using DataNex.Data;
 using DataNex.Model.Dtos;
+using DataNex.Model.Enums;
 using DataNex.Model.Models;
+using DataNexApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 
 namespace DataNexApi.Controllers
 {
@@ -106,6 +109,8 @@ namespace DataNexApi.Controllers
         public async Task<IActionResult> InsertDto([FromBody] DocumentDto document)
 
         {
+            var actionUser = await GetActionUser();
+
             var data = new Document();
 
             data.DocumentTypeId = document.DocumentTypeId;
@@ -142,10 +147,20 @@ namespace DataNexApi.Controllers
             data.UserDate2 = document.UserDate2;
             data.UserDate3 = document.UserDate3;
             data.UserDate4 = document.UserDate4;
+            data.UserAdded = actionUser.Id;
 
-            _context.Documents.Add(data);
+            try
+            {
+                _context.Documents.Add(data);
+                await _context.SaveChangesAsync();
+                LogService.CreateLog($"New document inserted by \"{actionUser.UserName}\". Document: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+            }
+            catch (Exception ex)
+            {
+                LogService.CreateLog($"Document could not be inserted by \"{actionUser.UserName}\". Document: {JsonConvert.SerializeObject(data)} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
-            await _context.SaveChangesAsync();
+            }
+
 
             var dto = _mapper.Map<DocumentDto>(data);
             var documentType = await _context.DocumentTypes.Where(x => x.Id == dto.DocumentTypeId).FirstOrDefaultAsync();
@@ -162,6 +177,8 @@ namespace DataNexApi.Controllers
         public async Task<IActionResult> UpdatetDto([FromBody] DocumentDto document)
 
         {
+            var actionUser = await GetActionUser();
+
             var data = await _context.Documents.Where(x => x.Id == document.Id).FirstOrDefaultAsync();
 
             data.DocumentTypeId = document.DocumentTypeId;
@@ -198,7 +215,16 @@ namespace DataNexApi.Controllers
                 total += (decimal)product.Product.Price*product.Quantity;
             }
             data.DocumentTotal = total;
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+                LogService.CreateLog($"Document updated by \"{actionUser.UserName}\". Document: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+            }
+            catch (Exception ex)
+            {
+                LogService.CreateLog($"Document could not be updated by \"{actionUser.UserName}\". Document: {JsonConvert.SerializeObject(data)} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+
+            }
 
             var dto = _mapper.Map<DocumentDto>(data);
 
@@ -208,12 +234,22 @@ namespace DataNexApi.Controllers
         [HttpDelete("deletebyid/{id}")]
         public async Task<IActionResult> DeleteById(Guid id)
         {
+            var actionUser = await GetActionUser();
+
             var data = await _context.Documents.FirstOrDefaultAsync(x => x.Id == id);
 
-            _context.Documents.Remove(data);
+            try
+            {
+                _context.Documents.Remove(data);
+                await _context.SaveChangesAsync();
+                LogService.CreateLog($"Document deleted by \"{actionUser.UserName}\"  Document: {JsonConvert.SerializeObject(data)}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
-            await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                LogService.CreateLog($"Document could not be deleted by \"{actionUser.UserName}\"  Document: {JsonConvert.SerializeObject(data)} Error:{ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
+            }
             return Ok(data);
         }
     }
