@@ -112,7 +112,7 @@ namespace DataNexApi.Controllers
             var actionUser = await GetActionUser();
 
             var data = new Document();
-
+            data.Id = document.Id;
             data.DocumentTypeId = document.DocumentTypeId;
             data.DocumentDateTime = document.DocumentDateTime;
             var source = await _context.Documents.Where(x=>x.DocumentTypeId== document.DocumentTypeId).OrderByDescending(x=>x.DocumentNumber).FirstOrDefaultAsync();
