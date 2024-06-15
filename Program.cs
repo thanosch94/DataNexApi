@@ -7,6 +7,7 @@ using DataNex.Model.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,8 +20,14 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 builder.Services.AddCors();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
-     options.UseSqlServer(builder.Configuration.GetConnectionString("DbConnection"), x => x.MigrationsAssembly("DataNex.Data"));
-   // options.UseMySql(builder.Configuration.GetConnectionString("MySqlConnection"), ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("MySqlConnection")));
+    var provider = builder.Configuration.GetSection("Provider").Value;
+    if(provider == "MsSQL")
+    {
+        options.UseSqlServer(builder.Configuration.GetConnectionString("DbConnection"), x => x.MigrationsAssembly("DataNex.Data"));
+    }else if(provider == "MySQL")
+    {
+        options.UseMySql(builder.Configuration.GetConnectionString("MySqlConnection"), ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("MySqlConnection")));
+    }
 });
 
 
