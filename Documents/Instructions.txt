@@ -3,7 +3,7 @@ Migration
 2. Update-Database -context MsSqlDbContext
 3. Script-Migration -i 0 -context ApplicationDbContext
 
- Remove-Migration -Project DataNex.Data -context MsSqlDbContext
+ Remove-Migration -Project DataNex.Data -context ApplicationDbContext
 
  Update-Database "20240517190259_AddedIdentityUserOnAppUserModel" -context ApplicationDbContext
 

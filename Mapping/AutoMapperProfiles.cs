@@ -22,6 +22,8 @@ namespace DataNexApi.Mapping
             CreateMap<ProductBarcode, ProductBarcodeDto>().ReverseMap();
             CreateMap<User, UserDto>().ReverseMap();
             CreateMap<Log, LogDto>().ReverseMap();
+            CreateMap<ConnectorParameters, ConnectorParametersDto>().ReverseMap();
+            CreateMap<WooConnectionsData, WooConnectionsDataDto>().ReverseMap();
 
         }
     }
