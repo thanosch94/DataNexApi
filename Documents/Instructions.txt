@@ -9,6 +9,6 @@ Migration
 
 
 MySQL
-1. Add-Migration AddedIdentityUserOnAppUserModel -Project DataNex.Data -OutputDir MySqlMigrations -context MySqlDbContext -Args "--Mysql"
+1. Add-Migration AddedNewTables -Project DataNex.Data -OutputDir MySqlMigrations -context MySqlDbContext -Args "--Mysql"
 2. Update-Database -context MySqlDbContext
 3. Script-Migration -i 0 -context MySqlDbContext
