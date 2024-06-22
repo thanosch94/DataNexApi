@@ -24,6 +24,8 @@ namespace DataNexApi.Mapping
             CreateMap<Log, LogDto>().ReverseMap();
             CreateMap<ConnectorParameters, ConnectorParametersDto>().ReverseMap();
             CreateMap<WooConnectionsData, WooConnectionsDataDto>().ReverseMap();
+            CreateMap<AdditionalCharge, AdditionalChargeDto>().ReverseMap();
+            CreateMap<DocumentAdditionalCharge, DocumentAdditionalChargeDto>().ReverseMap();
 
         }
     }
