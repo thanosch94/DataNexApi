@@ -50,6 +50,7 @@ namespace DataNexApi.Controllers.Connector
             var data = await _context.ConnectorJobs.Where(x => x.DataSourceId == id).Select(x=>new ConnectorJobDto()
             {
                 Name = x.Name,
+                Icon = x.Icon,
                 Description = x.Description,
                 JobType = x.JobType,
                 DataSourceId = x.DataSourceId,
@@ -66,6 +67,7 @@ namespace DataNexApi.Controllers.Connector
 
             var data = new ConnectorJob();
             data.Name = connectorJobDto.Name;
+            data.Icon = connectorJobDto.Icon;
             data.Description = connectorJobDto.Description;
             data.JobType = connectorJobDto.JobType;
             data.DataSourceId = connectorJobDto.DataSourceId;
@@ -96,6 +98,7 @@ namespace DataNexApi.Controllers.Connector
 
             var data = await _context.ConnectorJobs.FirstOrDefaultAsync(x => x.Id == connectorJobDto.Id);
             data.Name = connectorJobDto.Name;
+            data.Icon = connectorJobDto.Icon;
             data.Description = connectorJobDto.Description;
             data.JobType = connectorJobDto.JobType;
             data.DataSourceId = connectorJobDto.DataSourceId;
