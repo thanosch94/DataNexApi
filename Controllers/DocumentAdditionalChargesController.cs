@@ -32,10 +32,9 @@ namespace DataNexApi.Controllers
         [HttpGet("getbydocumentid/{id}")]
         public async Task<IActionResult> GetByDocumentId(Guid id)
         {
-            var data = await _context.DocumentAdditionalCharges.FirstOrDefaultAsync(x=>x.DocumentId == id);
-            var dto = _mapper.Map<DocumentAdditionalChargeDto>(data);
+            var data = await _context.DocumentAdditionalCharges.Where(x=>x.DocumentId == id).ToListAsync();
 
-            return Ok(dto);
+            return Ok(data);
         }
 
         [HttpPost("insertdto")]
@@ -47,6 +46,16 @@ namespace DataNexApi.Controllers
             data.DocumentId = documentAdditionalCharge.DocumentId;
             data.AdditionalChargeId = documentAdditionalCharge.AdditionalChargeId;
             data.AdditionalChargeAmount = documentAdditionalCharge.AdditionalChargeAmount;
+
+            //Update Orders Total
+
+            var document = await _context.Documents.FirstOrDefaultAsync(x => x.Id == data.DocumentId);
+
+            //Document may have not been inserted yet
+            if(document != null)
+            {
+                document.DocumentTotal += documentAdditionalCharge.AdditionalChargeAmount;
+            }
 
             try
             {
@@ -72,6 +81,10 @@ namespace DataNexApi.Controllers
             var actionUser = await GetActionUser();
 
             var data = await _context.DocumentAdditionalCharges.FirstOrDefaultAsync(x => x.Id == documentAdditionalCharge.Id);
+            var document = await _context.Documents.FirstOrDefaultAsync(x => x.Id == data.DocumentId);
+
+            //Remove previous value
+            document.DocumentTotal -= data.AdditionalChargeAmount;
 
             data.DocumentId = documentAdditionalCharge.DocumentId;
             data.AdditionalChargeId = documentAdditionalCharge.AdditionalChargeId;
@@ -79,6 +92,9 @@ namespace DataNexApi.Controllers
             data.UserUpdated = actionUser.Id;
             data.DateUpdated = DateTime.Now;
 
+            //Add new value
+            document.DocumentTotal += documentAdditionalCharge.AdditionalChargeAmount;
+          
             try
             {
                 await _context.SaveChangesAsync();
@@ -100,6 +116,10 @@ namespace DataNexApi.Controllers
             var actionUser = await GetActionUser();
 
             var data = await _context.DocumentAdditionalCharges.FirstOrDefaultAsync(x => x.Id == id);
+
+            var document = await _context.Documents.FirstOrDefaultAsync(x => x.Id == data.DocumentId);
+
+            document.DocumentTotal -= data.AdditionalChargeAmount;
 
             try
             {

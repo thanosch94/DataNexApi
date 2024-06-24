@@ -38,6 +38,7 @@
   <ItemGroup>
     <ProjectReference Include="..\DataNex.Data\DataNex.Data.csproj" />
     <ProjectReference Include="..\DataNex.Model\DataNex.Model.csproj" />
+    <ProjectReference Include="..\WoocommerceHandler\WoocommerceHandler.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,5 +1,7 @@
 ﻿using DataNex.Model.Dtos;
 using Microsoft.AspNetCore.Diagnostics;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace DataNexApi
 {
@@ -10,11 +12,22 @@ namespace DataNexApi
         public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
         {
             var innerErrorMessage = string.Empty;
+
             if (exception.InnerException != null)
             {
                 if (exception.InnerException.Message.Contains("The DELETE statement conflicted with the REFERENCE constraint"))
                 {
                     innerErrorMessage = "Entity is in use and cannot be deleted.";
+                }
+                else if (exception.InnerException.Message.Contains("Cannot insert the value NULL into column"))
+                {
+                    string pattern = @"'((?:(?!dbo)[^'])*)'";
+
+                    var columnName = Regex.Matches(exception.InnerException.Message, pattern);
+                    if(columnName.Count==1)
+                    {
+                        innerErrorMessage = $"Value {columnName[0].Value} cannot be NULL";
+                    }
                 }
                 else
                 {
