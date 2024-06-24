@@ -38,10 +38,36 @@ namespace DataNexApi.Controllers.Connector
         [HttpGet("getbyid/{id}")]
         public async Task<IActionResult> GetById(Guid id)
         {
-            var data = await _context.ConnectorJobs.FirstOrDefaultAsync(x => x.Id == id);
+            var data = await _context.ConnectorJobs.Where(x => x.Id == id).Select(x => new ConnectorJobDto()
+            {
+                Id = x.Id,
+                Name = x.Name,
+                Icon = x.Icon,
+                Description = x.Description,
+                JobType = x.JobType,
+                DataSourceId = x.DataSourceId,
+                WooConnectionDataSourceId = x.WooConnectionDataSourceId
+            }).FirstOrDefaultAsync();
             var dto = _mapper.Map<ConnectorJobDto>(data);
 
             return Ok(dto);
+        }
+
+        [HttpGet("getallbyjobtype/{jobType}")]
+        public async Task<IActionResult> GetAllByDataSourceId(ConnectorJobTypeEnum jobType)
+        {
+            var data = await _context.ConnectorJobs.Where(x => x.JobType == jobType).Select(x => new ConnectorJobDto()
+            {
+                Id = x.Id,
+                Name = x.Name,
+                Icon = x.Icon,
+                Description = x.Description,
+                JobType = x.JobType,
+                DataSourceId = x.DataSourceId,
+                WooConnectionDataSourceId = x.WooConnectionDataSourceId
+            }).ToListAsync();
+
+            return Ok(data);
         }
 
         [HttpGet("getallbydatasourceid/{id}")]
@@ -49,6 +75,7 @@ namespace DataNexApi.Controllers.Connector
         {
             var data = await _context.ConnectorJobs.Where(x => x.DataSourceId == id).Select(x=>new ConnectorJobDto()
             {
+                Id = x.Id,
                 Name = x.Name,
                 Icon = x.Icon,
                 Description = x.Description,
