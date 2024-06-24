@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using DataNex.Data;
 using DataNex.Model.Dtos;
+using DataNex.Model.Dtos.Connector;
 using DataNex.Model.Enums;
 using DataNex.Model.Models;
 using DataNexApi.Services;

@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using DataNex.Model.Dtos;
+using DataNex.Model.Dtos.Connector;
 using DataNex.Model.Models;
 
 namespace DataNexApi.Mapping
@@ -26,6 +27,7 @@ namespace DataNexApi.Mapping
             CreateMap<WooConnectionsData, WooConnectionsDataDto>().ReverseMap();
             CreateMap<AdditionalCharge, AdditionalChargeDto>().ReverseMap();
             CreateMap<DocumentAdditionalCharge, DocumentAdditionalChargeDto>().ReverseMap();
+            CreateMap<ConnectorJob, ConnectorJobDto>().ReverseMap();
 
         }
     }

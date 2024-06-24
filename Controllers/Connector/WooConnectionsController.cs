@@ -1,15 +1,18 @@
 ﻿using AutoMapper;
 using DataNex.Data;
 using DataNex.Model.Dtos;
+using DataNex.Model.Dtos.Connector;
 using DataNex.Model.Enums;
 using DataNex.Model.Models;
 using DataNexApi.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 
 namespace DataNexApi.Controllers.Connector
 {
+    [Authorize]
     public class WooConnectionsController:BaseController
     {
         private ApplicationDbContext _context;
