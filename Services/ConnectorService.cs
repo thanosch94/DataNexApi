@@ -3,7 +3,7 @@ using DataNex.Model.Dtos.Woocommerce;
 using DataNex.Model.Models;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using WoocommerceHandler;
+using WooCommerceService;
 
 namespace DataNexApi.Services
 {
