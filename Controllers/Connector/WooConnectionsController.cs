@@ -41,7 +41,7 @@ namespace DataNexApi.Controllers.Connector
             data.Name = wooConnectionsDataDto.Name;
             data.RequestType = wooConnectionsDataDto.RequestType;
             data.Endpoint = wooConnectionsDataDto.Endpoint;
-
+            data.WooEntity = wooConnectionsDataDto.WooEntity;
             try
             {
                 _context.WooConnectionsData.Add(data);
@@ -70,7 +70,8 @@ namespace DataNexApi.Controllers.Connector
             data.Name = wooConnectionsDataDto.Name;
             data.RequestType = wooConnectionsDataDto.RequestType;
             data.Endpoint = wooConnectionsDataDto.Endpoint;
-          
+            data.WooEntity = wooConnectionsDataDto.WooEntity;
+
             data.UserUpdated = actionUser.Id;
             data.DateUpdated = DateTime.Now;
 

@@ -2,18 +2,21 @@
 using DataNex.Data;
 using DataNex.Model.Dtos;
 using DataNex.Model.Dtos.Connector;
+using DataNex.Model.Dtos.Woocommerce;
 using DataNex.Model.Enums;
 using DataNex.Model.Models;
 using DataNexApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Mysqlx.Prepare;
 using Newtonsoft.Json;
+using WooCommerceService;
 
 namespace DataNexApi.Controllers.Connector
 {
     [Authorize]
-    public class ConnectorJobsController:BaseController
+    public class ConnectorJobsController : BaseController
     {
         private ApplicationDbContext _context;
         private IMapper _mapper;
@@ -33,8 +36,8 @@ namespace DataNexApi.Controllers.Connector
             return Ok(data);
 
 
-        }       
-        
+        }
+
         [HttpGet("getbyid/{id}")]
         public async Task<IActionResult> GetById(Guid id)
         {
@@ -73,7 +76,7 @@ namespace DataNexApi.Controllers.Connector
         [HttpGet("getallbydatasourceid/{id}")]
         public async Task<IActionResult> GetAllByDataSourceId(Guid id)
         {
-            var data = await _context.ConnectorJobs.Where(x => x.DataSourceId == id).Select(x=>new ConnectorJobDto()
+            var data = await _context.ConnectorJobs.Where(x => x.DataSourceId == id).Select(x => new ConnectorJobDto()
             {
                 Id = x.Id,
                 Name = x.Name,
@@ -171,5 +174,28 @@ namespace DataNexApi.Controllers.Connector
             }
             return Ok(data);
         }
+
+        [HttpPost("getconnectorjobresult")]
+        public async Task<IActionResult> GetConnectorJobResult([FromBody] ConnectorJobDto connectorJob)
+        {
+            var apiResponse = new ApiResponseDto();
+            var connectorService = new ConnectorService(_context);
+       
+                if (connectorJob.DataSourceId == AppBase.wordpressDataSource)
+                {
+                    //Todo add Interface
+                    apiResponse = await connectorService.ExecuteWoocommerceJob(connectorJob);
+
+                }
+                else if (connectorJob.DataSourceId == AppBase.magentoDataSource)
+                {
+
+                }
+                return Ok(apiResponse);
+
+           
+        }
+
+        
     }
 }
