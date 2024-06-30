@@ -25,9 +25,8 @@ namespace DataNexApi.Controllers
         [HttpGet("getall")]
         public async Task<IActionResult> GetAll()
         {
-            var data = await _context.Users.ToListAsync();
-
-            //var dtoData = _mapper.Map<UserDto>(data);
+            //DnAdmin User must not be visible in the users list
+            var data = await _context.Users.Where(x=>x.Id != AppBase.DnAdmin).ToListAsync();
 
             return Ok(data);
         }

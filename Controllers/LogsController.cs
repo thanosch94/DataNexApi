@@ -1,12 +1,14 @@
 ﻿using AutoMapper;
 using DataNex.Data;
 using DataNex.Model.Dtos;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Extensions;
 
 namespace DataNexApi.Controllers
 {
+    [Authorize]
     public class LogsController:BaseController
     {
         private ApplicationDbContext _context;

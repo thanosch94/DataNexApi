@@ -4,12 +4,14 @@ using DataNex.Model.Dtos;
 using DataNex.Model.Enums;
 using DataNex.Model.Models;
 using DataNexApi.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 
 namespace DataNexApi.Controllers
 {
+    [Authorize]
     public class DocumentAdditionalChargesController:BaseController
     {
         private ApplicationDbContext _context;
