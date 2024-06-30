@@ -21,10 +21,11 @@ builder.Services.AddCors();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     var provider = builder.Configuration.GetSection("Provider").Value;
-    if(provider == "MsSQL")
+    if (provider == "MsSQL")
     {
         options.UseSqlServer(builder.Configuration.GetConnectionString("DbConnection"), x => x.MigrationsAssembly("DataNex.Data"));
-    }else if(provider == "MySQL")
+    }
+    else if (provider == "MySQL")
     {
         options.UseMySql(builder.Configuration.GetConnectionString("MySqlConnection"), ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("MySqlConnection")));
     }
@@ -37,7 +38,8 @@ builder.Services.AddIdentity<User, Roles>()
 
 
 // Configure authentication
-builder.Services.AddAuthentication(opt => {
+builder.Services.AddAuthentication(opt =>
+{
     opt.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     opt.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
@@ -63,6 +65,10 @@ builder.Services.AddAutoMapper(typeof(Program));
 // Add services to the container.
 var app = builder.Build();
 
+//Seed data on Startup
+var applicationDataSeeder = new ApplicationDataSeeder();
+await applicationDataSeeder.Seed(app.Services);
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
@@ -77,9 +83,9 @@ if (!app.Environment.IsDevelopment())
 
 var origins = builder.Configuration["AllowedOrigins"].Split(";");
 
-if(origins.Length > 0 && !string.IsNullOrEmpty(origins[0]))
+if (origins.Length > 0 && !string.IsNullOrEmpty(origins[0]))
 {
-    app.UseCors(x=>x.AllowAnyMethod().AllowAnyHeader().WithOrigins(origins).AllowCredentials());
+    app.UseCors(x => x.AllowAnyMethod().AllowAnyHeader().WithOrigins(origins).AllowCredentials());
 }
 else
 {
