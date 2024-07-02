@@ -28,7 +28,7 @@ namespace DataNexApi.Mapping
             CreateMap<AdditionalCharge, AdditionalChargeDto>().ReverseMap();
             CreateMap<DocumentAdditionalCharge, DocumentAdditionalChargeDto>().ReverseMap();
             CreateMap<ConnectorJob, ConnectorJobDto>().ReverseMap();
-
+            CreateMap<WareHouse, WareHouseDto>().ReverseMap();
         }
     }
 }
