@@ -34,8 +34,136 @@ namespace DataNexApi
                 };
 
                 context.Users.Add(userToAdd);
-                context.SaveChanges();
             }
+
+            //Create document types
+            var documentTypes = await context.Documents.ToListAsync();
+
+            if(!documentTypes.Any(x=>x.Id == DataSeedIds.Offer))
+            {
+                var documentType = new DocumentType()
+                {
+                    Id = DataSeedIds.Offer,
+                    Name = "Offer",
+                    Abbreviation = "OFR",
+                    DocumentTypeGroup  = DocumentTypeGroupEnum.Sales,
+                    IsSeeded = true
+                };
+                context.DocumentTypes.Add(documentType);
+
+            }
+
+            if (!documentTypes.Any(x=>x.Id == DataSeedIds.SalesOrder))
+            {
+                var documentType = new DocumentType()
+                {
+                    Id = DataSeedIds.SalesOrder,
+                    Name = "Sales Order",
+                    Abbreviation = "SO",
+                    DocumentTypeGroup = DocumentTypeGroupEnum.Sales,
+                    IsSeeded = true
+                };
+                context.DocumentTypes.Add(documentType);
+            }
+
+            if(!documentTypes.Any(x=>x.Id == DataSeedIds.ProformaInvoice))
+            {
+                var documentType = new DocumentType()
+                {
+                    Id = DataSeedIds.ProformaInvoice,
+                    Name = "Proforma Invoice",
+                    Abbreviation = "PI",
+                    DocumentTypeGroup = DocumentTypeGroupEnum.Sales,
+                    IsSeeded = true
+                };
+                context.DocumentTypes.Add(documentType);
+
+            }
+
+            if (!documentTypes.Any(x=>x.Id == DataSeedIds.Receipt))
+            {
+                var documentType = new DocumentType()
+                {
+                    Id = DataSeedIds.Receipt,
+                    Name = "Receipt",
+                    Abbreviation = "RCPT",
+                    DocumentTypeGroup = DocumentTypeGroupEnum.Sales,
+                    IsSeeded = true
+                };
+                context.DocumentTypes.Add(documentType);
+
+            }
+
+            if (!documentTypes.Any(x=>x.Id == DataSeedIds.Invoice))
+            {
+                var documentType = new DocumentType()
+                {
+                    Id = DataSeedIds.Invoice,
+                    Name = "Invoice",
+                    Abbreviation = "INV",
+                    DocumentTypeGroup = DocumentTypeGroupEnum.Sales,
+                    IsSeeded = true
+                };
+                context.DocumentTypes.Add(documentType);
+
+            }
+
+            if (!documentTypes.Any(x=>x.Id == DataSeedIds.SalesDeliveryNote))
+            {
+                var documentType = new DocumentType()
+                {
+                    Id = DataSeedIds.SalesDeliveryNote,
+                    Name = "Sales Delivery Note",
+                    Abbreviation = "SDN",
+                    DocumentTypeGroup = DocumentTypeGroupEnum.Sales,
+                    IsSeeded = true
+                };
+                context.DocumentTypes.Add(documentType);
+
+            }  
+            
+            if (!documentTypes.Any(x=>x.Id == DataSeedIds.PurchaseDeliveryNote))
+            {
+                var documentType = new DocumentType()
+                {
+                    Id = DataSeedIds.PurchaseDeliveryNote,
+                    Name = "Purchase Delivery Note",
+                    Abbreviation = "SDN",
+                    DocumentTypeGroup = DocumentTypeGroupEnum.Purchasing,
+                    IsSeeded = true
+                };
+                context.DocumentTypes.Add(documentType);
+
+            }
+
+            if (!documentTypes.Any(x=>x.Id == DataSeedIds.PurchaseOrder))
+            {
+                var documentType = new DocumentType()
+                {
+                    Id = DataSeedIds.PurchaseOrder,
+                    Name = "Purchase Order",
+                    Abbreviation = "PO",
+                    DocumentTypeGroup = DocumentTypeGroupEnum.Purchasing,
+                    IsSeeded = true
+                };
+                context.DocumentTypes.Add(documentType);
+
+            }
+
+            if (!documentTypes.Any(x=>x.Id == DataSeedIds.CreditNote))
+            {
+                var documentType = new DocumentType()
+                {
+                    Id = DataSeedIds.CreditNote,
+                    Name = "Credit Note",
+                    Abbreviation = "CN",
+                    DocumentTypeGroup = DocumentTypeGroupEnum.Finance,
+                    IsSeeded = true
+                };
+                context.DocumentTypes.Add(documentType);
+
+            }
+            context.SaveChanges();
         }
 
 

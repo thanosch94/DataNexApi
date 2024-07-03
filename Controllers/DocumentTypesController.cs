@@ -52,6 +52,8 @@ namespace DataNexApi.Controllers
 
             data.Name = documentType.Name;
             data.Description = documentType.Description;
+            data.Abbreviation = documentType.Abbreviation;
+            data.DocumentTypeGroup = documentType.DocumentTypeGroup;
             data.UserAdded = actionUser.Id;
 
             try
@@ -81,6 +83,8 @@ namespace DataNexApi.Controllers
 
             data.Name = documentType.Name;
             data.Description = documentType.Description;
+            data.Abbreviation = documentType.Abbreviation;
+            data.DocumentTypeGroup = documentType.DocumentTypeGroup;
 
             try
             {
