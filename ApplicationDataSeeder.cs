@@ -34,10 +34,11 @@ namespace DataNexApi
                 };
 
                 context.Users.Add(userToAdd);
+                context.SaveChanges();
             }
 
             //Create document types
-            var documentTypes = await context.Documents.ToListAsync();
+            var documentTypes = await context.DocumentTypes.ToListAsync();
 
             if(!documentTypes.Any(x=>x.Id == DataSeedIds.Offer))
             {
@@ -47,9 +48,12 @@ namespace DataNexApi
                     Name = "Offer",
                     Abbreviation = "OFR",
                     DocumentTypeGroup  = DocumentTypeGroupEnum.Sales,
-                    IsSeeded = true
+                    IsSeeded = true,
+                    UserAdded = AppBase.DnAdmin,
+
                 };
                 context.DocumentTypes.Add(documentType);
+                context.SaveChanges();
 
             }
 
@@ -61,12 +65,16 @@ namespace DataNexApi
                     Name = "Sales Order",
                     Abbreviation = "SO",
                     DocumentTypeGroup = DocumentTypeGroupEnum.Sales,
-                    IsSeeded = true
+                    IsSeeded = true,
+                    UserAdded = AppBase.DnAdmin,
+
                 };
                 context.DocumentTypes.Add(documentType);
+                context.SaveChanges();
+
             }
 
-            if(!documentTypes.Any(x=>x.Id == DataSeedIds.ProformaInvoice))
+            if (!documentTypes.Any(x=>x.Id == DataSeedIds.ProformaInvoice))
             {
                 var documentType = new DocumentType()
                 {
@@ -74,9 +82,12 @@ namespace DataNexApi
                     Name = "Proforma Invoice",
                     Abbreviation = "PI",
                     DocumentTypeGroup = DocumentTypeGroupEnum.Sales,
-                    IsSeeded = true
+                    IsSeeded = true,
+                    UserAdded = AppBase.DnAdmin,
+
                 };
                 context.DocumentTypes.Add(documentType);
+                context.SaveChanges();
 
             }
 
@@ -88,9 +99,12 @@ namespace DataNexApi
                     Name = "Receipt",
                     Abbreviation = "RCPT",
                     DocumentTypeGroup = DocumentTypeGroupEnum.Sales,
-                    IsSeeded = true
+                    IsSeeded = true,
+                    UserAdded = AppBase.DnAdmin,
+
                 };
                 context.DocumentTypes.Add(documentType);
+                context.SaveChanges();
 
             }
 
@@ -102,9 +116,12 @@ namespace DataNexApi
                     Name = "Invoice",
                     Abbreviation = "INV",
                     DocumentTypeGroup = DocumentTypeGroupEnum.Sales,
-                    IsSeeded = true
+                    IsSeeded = true,
+                    UserAdded = AppBase.DnAdmin,
+
                 };
                 context.DocumentTypes.Add(documentType);
+                context.SaveChanges();
 
             }
 
@@ -116,12 +133,15 @@ namespace DataNexApi
                     Name = "Sales Delivery Note",
                     Abbreviation = "SDN",
                     DocumentTypeGroup = DocumentTypeGroupEnum.Sales,
-                    IsSeeded = true
+                    IsSeeded = true,
+                    UserAdded = AppBase.DnAdmin,
+
                 };
                 context.DocumentTypes.Add(documentType);
+                context.SaveChanges();
 
-            }  
-            
+            }
+
             if (!documentTypes.Any(x=>x.Id == DataSeedIds.PurchaseDeliveryNote))
             {
                 var documentType = new DocumentType()
@@ -130,9 +150,29 @@ namespace DataNexApi
                     Name = "Purchase Delivery Note",
                     Abbreviation = "SDN",
                     DocumentTypeGroup = DocumentTypeGroupEnum.Purchasing,
-                    IsSeeded = true
+                    IsSeeded = true,
+                    UserAdded = AppBase.DnAdmin,
+
                 };
                 context.DocumentTypes.Add(documentType);
+                context.SaveChanges();
+
+            }
+
+            if (!documentTypes.Any(x => x.Id == DataSeedIds.PurchaseInvoice))
+            {
+                var documentType = new DocumentType()
+                {
+                    Id = DataSeedIds.PurchaseInvoice,
+                    Name = "Purchase Invoice",
+                    Abbreviation = "PINV",
+                    DocumentTypeGroup = DocumentTypeGroupEnum.Purchasing,
+                    IsSeeded = true,
+                    UserAdded = AppBase.DnAdmin,
+
+                };
+                context.DocumentTypes.Add(documentType);
+                context.SaveChanges();
 
             }
 
@@ -144,9 +184,12 @@ namespace DataNexApi
                     Name = "Purchase Order",
                     Abbreviation = "PO",
                     DocumentTypeGroup = DocumentTypeGroupEnum.Purchasing,
-                    IsSeeded = true
+                    IsSeeded = true,
+                    UserAdded = AppBase.DnAdmin,
+
                 };
                 context.DocumentTypes.Add(documentType);
+                context.SaveChanges();
 
             }
 
@@ -158,12 +201,16 @@ namespace DataNexApi
                     Name = "Credit Note",
                     Abbreviation = "CN",
                     DocumentTypeGroup = DocumentTypeGroupEnum.Finance,
-                    IsSeeded = true
+                    IsSeeded = true,
+                    UserAdded = AppBase.DnAdmin,
+
                 };
                 context.DocumentTypes.Add(documentType);
+                context.SaveChanges();
 
             }
-            context.SaveChanges();
+
+            
         }
 
 

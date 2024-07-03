@@ -13,7 +13,7 @@ using System.Xml.Linq;
 namespace DataNexApi.Controllers
 {
     [Authorize]
-    public class DocumentTypesController:BaseController
+    public class DocumentTypesController : BaseController
     {
 
         private ApplicationDbContext _context;
@@ -42,6 +42,7 @@ namespace DataNexApi.Controllers
             return Ok(dto);
         }
 
+      
         [HttpPost("insertdto")]
         public async Task<IActionResult> InsertDto([FromBody] DocumentTypeDto documentType)
 

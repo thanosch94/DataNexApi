@@ -105,6 +105,47 @@ namespace DataNexApi.Controllers
             return Ok(data);
         }
 
+
+        [HttpGet("getbydocumenttypegroup/{documentTypeGroup}")]
+        public async Task<IActionResult> GetByDocumnentTypeGroup(DocumentTypeGroupEnum documentTypeGroup)
+        {
+            var data = await _context.Documents.Where(x => x.DocumentType.DocumentTypeGroup == documentTypeGroup).Select(x => new DocumentDto()
+            {
+                Id = x.Id,
+                DocumentDateTime = x.DocumentDateTime,
+                DocumentTypeId = x.DocumentTypeId,
+                DocumentTypeName = x.DocumentType.Name,
+                DocumentNumber = x.DocumentNumber,
+                DocumentStatusId = x.DocumentStatusId,
+                CustomerId = x.CustomerId,
+                CustomerName = x.Customer.Name,
+                CustomerPhone1 = x.Customer.Phone1,
+                DocumentTotal = x.DocumentTotal,
+                ShippingAddress = x.ShippingAddress,
+                ShippingRegion = x.ShippingRegion,
+                ShippingPostalCode = x.ShippingPostalCode,
+                ShippingCity = x.ShippingCity,
+                ShippingCountry = x.ShippingCountry,
+                ShippingPhone1 = x.ShippingPhone1,
+                ShippingPhone2 = x.ShippingPhone2,
+                ShippingEmail = x.ShippingEmail,
+                UserText1 = x.UserText1,
+                UserText2 = x.UserText2,
+                UserText3 = x.UserText3,
+                UserText4 = x.UserText4,
+                UserNumber1 = x.UserNumber1,
+                UserNumber2 = x.UserNumber2,
+                UserNumber3 = x.UserNumber3,
+                UserNumber4 = x.UserNumber4,
+                UserDate1 = x.UserDate1,
+                UserDate2 = x.UserDate2,
+                UserDate3 = x.UserDate3,
+                UserDate4 = x.UserDate4
+            }).ToListAsync();
+
+            return Ok(data);
+        }
+
         [HttpPost("insertdto")]
         public async Task<IActionResult> InsertDto([FromBody] DocumentDto document)
 
