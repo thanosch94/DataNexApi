@@ -2,6 +2,8 @@
 using DataNex.Model.Enums;
 using DataNex.Model.Models;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Xml.Linq;
 
 namespace DataNexApi
 {
@@ -18,10 +20,22 @@ namespace DataNexApi
 
         private async Task SeedData(ApplicationDbContext context)
         {
-            //Create dnadmin
-            var dnadmin = await context.Users.FirstOrDefaultAsync(x=>x.Id == AppBase.DnAdmin);
-        
-            if(dnadmin == null)
+
+            await SeedUsers(context);
+
+            await SeedDocumentTypes(context);
+
+            await SeedDocumentStatuses(context);
+            
+
+            
+        }
+
+        public async Task SeedUsers(ApplicationDbContext context)
+        {
+            var dnadmin = await context.Users.FirstOrDefaultAsync(x => x.Id == AppBase.DnAdmin);
+
+            if (dnadmin == null)
             {
                 var userToAdd = new User()
                 {
@@ -36,18 +50,20 @@ namespace DataNexApi
                 context.Users.Add(userToAdd);
                 context.SaveChanges();
             }
+        }
 
-            //Create document types
+        public async Task SeedDocumentTypes(ApplicationDbContext context)
+        {
             var documentTypes = await context.DocumentTypes.ToListAsync();
 
-            if(!documentTypes.Any(x=>x.Id == DataSeedIds.Offer))
+            if (!documentTypes.Any(x => x.Id == DataSeedIds.Offer))
             {
                 var documentType = new DocumentType()
                 {
                     Id = DataSeedIds.Offer,
                     Name = "Offer",
                     Abbreviation = "OFR",
-                    DocumentTypeGroup  = DocumentTypeGroupEnum.Sales,
+                    DocumentTypeGroup = DocumentTypeGroupEnum.Sales,
                     IsSeeded = true,
                     UserAdded = AppBase.DnAdmin,
 
@@ -57,7 +73,7 @@ namespace DataNexApi
 
             }
 
-            if (!documentTypes.Any(x=>x.Id == DataSeedIds.SalesOrder))
+            if (!documentTypes.Any(x => x.Id == DataSeedIds.SalesOrder))
             {
                 var documentType = new DocumentType()
                 {
@@ -74,7 +90,7 @@ namespace DataNexApi
 
             }
 
-            if (!documentTypes.Any(x=>x.Id == DataSeedIds.ProformaInvoice))
+            if (!documentTypes.Any(x => x.Id == DataSeedIds.ProformaInvoice))
             {
                 var documentType = new DocumentType()
                 {
@@ -91,7 +107,7 @@ namespace DataNexApi
 
             }
 
-            if (!documentTypes.Any(x=>x.Id == DataSeedIds.Receipt))
+            if (!documentTypes.Any(x => x.Id == DataSeedIds.Receipt))
             {
                 var documentType = new DocumentType()
                 {
@@ -108,7 +124,7 @@ namespace DataNexApi
 
             }
 
-            if (!documentTypes.Any(x=>x.Id == DataSeedIds.Invoice))
+            if (!documentTypes.Any(x => x.Id == DataSeedIds.Invoice))
             {
                 var documentType = new DocumentType()
                 {
@@ -125,7 +141,7 @@ namespace DataNexApi
 
             }
 
-            if (!documentTypes.Any(x=>x.Id == DataSeedIds.SalesDeliveryNote))
+            if (!documentTypes.Any(x => x.Id == DataSeedIds.SalesDeliveryNote))
             {
                 var documentType = new DocumentType()
                 {
@@ -142,7 +158,7 @@ namespace DataNexApi
 
             }
 
-            if (!documentTypes.Any(x=>x.Id == DataSeedIds.PurchaseDeliveryNote))
+            if (!documentTypes.Any(x => x.Id == DataSeedIds.PurchaseDeliveryNote))
             {
                 var documentType = new DocumentType()
                 {
@@ -176,7 +192,7 @@ namespace DataNexApi
 
             }
 
-            if (!documentTypes.Any(x=>x.Id == DataSeedIds.PurchaseOrder))
+            if (!documentTypes.Any(x => x.Id == DataSeedIds.PurchaseOrder))
             {
                 var documentType = new DocumentType()
                 {
@@ -193,7 +209,7 @@ namespace DataNexApi
 
             }
 
-            if (!documentTypes.Any(x=>x.Id == DataSeedIds.CreditNote))
+            if (!documentTypes.Any(x => x.Id == DataSeedIds.CreditNote))
             {
                 var documentType = new DocumentType()
                 {
@@ -209,10 +225,77 @@ namespace DataNexApi
                 context.SaveChanges();
 
             }
-
-            
         }
 
+        public async Task SeedDocumentStatuses(ApplicationDbContext context)
+        {
+            var statuses = await context.Statuses.ToListAsync();
 
+            if (!statuses.Any(x => x.Id == DataSeedIds.Pending))
+            {
+                var status = new Status()
+                {
+                    Id = DataSeedIds.Pending,
+                    Name = "Pending",
+                    IsSeeded = true
+                };
+                context.Statuses.Add(status);
+                context.SaveChanges();
+
+            }
+                   
+            if (!statuses.Any(x => x.Id == DataSeedIds.OnHold))
+            {
+                var status = new Status()
+                {
+                    Id = DataSeedIds.OnHold,
+                    Name = "OnHold",
+                    IsSeeded = true
+                };
+                context.Statuses.Add(status);
+                context.SaveChanges();
+
+            }
+                   
+            if (!statuses.Any(x => x.Id == DataSeedIds.Processing))
+            {
+                var status = new Status()
+                {
+                    Id = DataSeedIds.Processing,
+                    Name = "Processing",
+                    IsSeeded = true
+                };
+                context.Statuses.Add(status);
+                context.SaveChanges();
+
+            }
+                   
+            if (!statuses.Any(x => x.Id == DataSeedIds.Completed))
+            {
+                var status = new Status()
+                {
+                    Id = DataSeedIds.Completed,
+                    Name = "Completed",
+                    IsSeeded = true
+                };
+                context.Statuses.Add(status);
+                context.SaveChanges();
+
+            }
+                       
+            if (!statuses.Any(x => x.Id == DataSeedIds.Returned))
+            {
+                var status = new Status()
+                {
+                    Id = DataSeedIds.Returned,
+                    Name = "Returned",
+                    IsSeeded = true
+                };
+                context.Statuses.Add(status);
+                context.SaveChanges();
+
+            }
+
+        }
     }
 }

@@ -32,6 +32,18 @@ namespace DataNexApi.Controllers
             return Ok(data);
         }
 
+        [HttpGet("getactivedocumenttypeslookupbydocumententity/{documentTypeGroup}")]
+        public async Task<IActionResult> GetActiveDocumentTypesLookupByDocumentTypeGroup(DocumentTypeGroupEnum documentTypeGroup)
+        {
+            var data = await _context.DocumentTypes.Where(x=>x.DocumentTypeGroup == documentTypeGroup && x.IsActive==true).Select(x=> new DocumentTypeDto()
+            {
+                Id = x.Id,
+                Name = x.Name,
+            }).ToListAsync();
+
+            return Ok(data);
+        }
+
         [HttpGet("getbyid/{id}")]
         public async Task<IActionResult> GetById(Guid id)
         {
@@ -42,7 +54,7 @@ namespace DataNexApi.Controllers
             return Ok(dto);
         }
 
-      
+
         [HttpPost("insertdto")]
         public async Task<IActionResult> InsertDto([FromBody] DocumentTypeDto documentType)
 
@@ -55,6 +67,7 @@ namespace DataNexApi.Controllers
             data.Description = documentType.Description;
             data.Abbreviation = documentType.Abbreviation;
             data.DocumentTypeGroup = documentType.DocumentTypeGroup;
+            data.IsActive = documentType.IsActive;
             data.UserAdded = actionUser.Id;
 
             try
@@ -82,26 +95,58 @@ namespace DataNexApi.Controllers
 
             var data = await _context.DocumentTypes.Where(x => x.Id == documentType.Id).FirstOrDefaultAsync();
 
-            data.Name = documentType.Name;
-            data.Description = documentType.Description;
-            data.Abbreviation = documentType.Abbreviation;
-            data.DocumentTypeGroup = documentType.DocumentTypeGroup;
 
-            try
+            if (!data.IsSeeded)
             {
-                await _context.SaveChangesAsync();
-                LogService.CreateLog($"Document Type \"{data.Name}\" updated by \"{actionUser.UserName}\". Document Type: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                data.Name = documentType.Name;
+                data.Description = documentType.Description;
+                data.Abbreviation = documentType.Abbreviation;
+                data.DocumentTypeGroup = documentType.DocumentTypeGroup;
+                data.IsActive = documentType.IsActive;
+                try
+                {
+                    await _context.SaveChangesAsync();
+                    LogService.CreateLog($"Document Type \"{data.Name}\" updated by \"{actionUser.UserName}\". Document Type: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+
+                }
+                catch (Exception ex)
+                {
+                    LogService.CreateLog($"Document Type \"{data.Name}\" could not be updated by \"{actionUser.UserName}\"  Document Type: {JsonConvert.SerializeObject(data)} Error: {ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+
+                }
+
+                var dto = _mapper.Map<DocumentTypeDto>(data);
+
+                return Ok(dto);
+            }
+            else
+            {
+                //If any change made to a seeded entity except IsActive
+                if (data.Name != documentType.Name || data.Description != documentType.Description || data.Abbreviation != documentType.Abbreviation || data.DocumentTypeGroup != documentType.DocumentTypeGroup)
+                {
+                    return BadRequest("Record cannot be updated. If necessary deactivate it and create a new one.");
+                }
+                else
+                {
+                    data.IsActive = documentType.IsActive;
+                    try
+                    {
+                        await _context.SaveChangesAsync();
+                        LogService.CreateLog($"Document Type \"{data.Name}\" updated by \"{actionUser.UserName}\". Document Type: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+
+                    }
+                    catch (Exception ex)
+                    {
+                        LogService.CreateLog($"Document Type \"{data.Name}\" could not be updated by \"{actionUser.UserName}\"  Document Type: {JsonConvert.SerializeObject(data)} Error: {ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+
+                    }
+
+                    var dto = _mapper.Map<DocumentTypeDto>(data);
+                    return Ok(dto);
+                }
 
             }
-            catch (Exception ex)
-            {
-                LogService.CreateLog($"Document Type \"{data.Name}\" could not be updated by \"{actionUser.UserName}\"  Document Type: {JsonConvert.SerializeObject(data)} Error: {ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
-            }
-
-            var dto = _mapper.Map<DocumentTypeDto>(data);
-
-            return Ok(dto);
         }
 
         [HttpDelete("deletebyid/{id}")]
@@ -111,21 +156,31 @@ namespace DataNexApi.Controllers
 
             var data = await _context.DocumentTypes.FirstOrDefaultAsync(x => x.Id == id);
 
-            try
+            if (!data.IsSeeded)
             {
-                _context.DocumentTypes.Remove(data);
-                await _context.SaveChangesAsync();
-                LogService.CreateLog($"Document Type \"{data.Name}\" deleted by \"{actionUser.UserName}\"  Document Type: {JsonConvert.SerializeObject(data)}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                try
+                {
+                    _context.DocumentTypes.Remove(data);
+                    await _context.SaveChangesAsync();
+                    LogService.CreateLog($"Document Type \"{data.Name}\" deleted by \"{actionUser.UserName}\"  Document Type: {JsonConvert.SerializeObject(data)}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
+                }
+                catch (Exception ex)
+                {
+                    LogService.CreateLog($"Document Type \"{data.Name}\" could not be deleted by \"{actionUser.UserName}\"  Document Type: {JsonConvert.SerializeObject(data)} Error:{ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+
+                }
+                var dto = _mapper.Map<DocumentTypeDto>(data);
+
+                return Ok(dto);
             }
-            catch (Exception ex)
+            else
             {
-                LogService.CreateLog($"Document Type \"{data.Name}\" could not be deleted by \"{actionUser.UserName}\"  Document Type: {JsonConvert.SerializeObject(data)} Error:{ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                LogService.CreateLog($"Document Type \"{data.Name}\" could not be deleted by \"{actionUser.UserName}\"  Document Type: {JsonConvert.SerializeObject(data)} Error:Record is seeded.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
+                return BadRequest("Record cannot be deleted. It can only be deactivated.");
             }
-            var dto = _mapper.Map<DocumentTypeDto>(data);
 
-            return Ok(dto);
         }
     }
 }
