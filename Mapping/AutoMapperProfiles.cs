@@ -30,6 +30,7 @@ namespace DataNexApi.Mapping
             CreateMap<ConnectorJob, ConnectorJobDto>().ReverseMap();
             CreateMap<WareHouse, WareHouseDto>().ReverseMap();
             CreateMap<Supplier, SupplierDto>().ReverseMap();
+            CreateMap<VatClass, VatClassDto>().ReverseMap();
         }
     }
 }
