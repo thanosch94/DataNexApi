@@ -32,6 +32,7 @@ namespace DataNexApi.Controllers
                 DocumentTypeId = x.DocumentTypeId,
                 DocumentTypeName = x.DocumentType.Name,
                 DocumentNumber = x.DocumentNumber,
+                DocumentCode = x.DocumentCode,
                 DocumentStatusId = x.DocumentStatusId,
                 CustomerId = x.CustomerId,
                 CustomerName = x.Customer.Name,
@@ -70,7 +71,8 @@ namespace DataNexApi.Controllers
                 Id = x.Id,
                 DocumentDateTime = x.DocumentDateTime,
                 DocumentTypeId = x.DocumentTypeId,
-                DocumentTypeName = x.DocumentType.Name,
+                DocumentCode  = x.DocumentCode,
+                DocumentTypeName = x.DocumentType.Abbreviation,
                 DocumentNumber = x.DocumentNumber,
                 DocumentStatusId = x.DocumentStatusId,
                 DocumentStatusName = x.DocumentStatus.Name,
@@ -116,6 +118,7 @@ namespace DataNexApi.Controllers
                 DocumentTypeId = x.DocumentTypeId,
                 DocumentTypeName = x.DocumentType.Name,
                 DocumentNumber = x.DocumentNumber,
+                DocumentCode = x.DocumentCode,
                 DocumentStatusId = x.DocumentStatusId,
                 CustomerId = x.CustomerId,
                 CustomerName = x.Customer.Name,
@@ -165,6 +168,13 @@ namespace DataNexApi.Controllers
             {
                 data.DocumentNumber = 1;
             }
+
+            var documentType = await _context.DocumentTypes.FirstOrDefaultAsync(x => x.Id == document.DocumentTypeId);
+            if (documentType!=null)
+            {
+                data.DocumentCode = documentType.Abbreviation +"-"+ data.DocumentNumber.ToString().PadLeft(6,'0');
+
+            }
             data.CustomerId = document.CustomerId;
             data.DocumentStatusId = document.DocumentStatusId;
             data.DocumentTotal = document.DocumentTotal;
@@ -194,7 +204,10 @@ namespace DataNexApi.Controllers
             {
                 _context.Documents.Add(data);
                 await _context.SaveChangesAsync();
-                LogService.CreateLog($"New document inserted by \"{actionUser.UserName}\". Document: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                LogService.CreateLog($"New document inserted by \"{actionUser.UserName}\". Document: {JsonConvert.SerializeObject(data, new JsonSerializerSettings()
+                {
+                    ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
+                })}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
             }
             catch (Exception ex)
             {
@@ -204,7 +217,6 @@ namespace DataNexApi.Controllers
 
 
             var dto = _mapper.Map<DocumentDto>(data);
-            var documentType = await _context.DocumentTypes.Where(x => x.Id == dto.DocumentTypeId).FirstOrDefaultAsync();
             dto.DocumentTypeName = documentType.Name;
 
             var customer = await _context.Customers.Where(x=>x.Id==dto.CustomerId).FirstOrDefaultAsync();

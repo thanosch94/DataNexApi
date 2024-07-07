@@ -38,7 +38,7 @@ namespace DataNexApi.Controllers
             var data = await _context.DocumentTypes.Where(x=>x.DocumentTypeGroup == documentTypeGroup && x.IsActive==true).Select(x=> new DocumentTypeDto()
             {
                 Id = x.Id,
-                Name = x.Name,
+                Abbreviation = x.Abbreviation,
             }).ToListAsync();
 
             return Ok(data);
