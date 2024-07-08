@@ -34,7 +34,9 @@ namespace DataNexApi.Controllers
                 Sku = x.Sku,
                 Description = x.Description,
                 ImagePath = x.ImagePath,
-                Price = x.Price,
+                RetailPrice = x.RetailPrice,
+                WholesalePrice = x.WholesalePrice,
+                VatClassId = x.VatClassId,
                 BrandId = x.BrandId,
                 BrandName = x.Brand.Name
             }).ToListAsync();
@@ -53,7 +55,9 @@ namespace DataNexApi.Controllers
                 Sku = x.Sku,
                 Description = x.Description,
                 ImagePath = x.ImagePath,
-                Price = x.Price,
+                RetailPrice = x.RetailPrice,
+                WholesalePrice = x.WholesalePrice,
+                VatClassId = x.VatClassId,
                 BrandId = x.BrandId,
                 BrandName = x.Brand.Name
             }).FirstOrDefaultAsync();
@@ -97,8 +101,10 @@ namespace DataNexApi.Controllers
             data.Sku = product.Sku;
             data.Description = product.Description;
             data.ImagePath = product.ImagePath;
-            data.Price = product.Price;
+            data.RetailPrice = product.RetailPrice;
+            data.WholesalePrice = product.WholesalePrice;
             data.BrandId = product.BrandId;
+            data.VatClassId = product.VatClassId;
             data.UserAdded = actionUser.Id;
 
             try
@@ -129,7 +135,9 @@ namespace DataNexApi.Controllers
             data.Sku = product.Sku;
             data.Description = product.Description;
             data.ImagePath = product.ImagePath;
-            data.Price = product.Price;
+            data.RetailPrice = product.RetailPrice;
+            data.WholesalePrice = product.WholesalePrice;
+            data.VatClassId = product.VatClassId;
             data.BrandId = product.BrandId;
 
             try

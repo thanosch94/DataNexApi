@@ -56,7 +56,7 @@ namespace DataNexApi.Controllers
                 Sku = x.Product.Sku,
                 ProductSizeId = x.Size.Id,
                 SizeName = x.Size.Name,
-                Price = (decimal)x.Product.Price,
+                Price = (decimal)x.Product.RetailPrice,
                 Quantity = 1,
 
             }).FirstOrDefaultAsync();
@@ -80,6 +80,8 @@ namespace DataNexApi.Controllers
                 Sku = x.Product.Sku,
                 Barcode = x.Product.ProductBarcodes.Where(y => y.SizeId == x.ProductSizeId && y.ProductId == x.ProductId).FirstOrDefault().Barcode,
                 Price = x.Price,
+                VatAmount = x.VatAmount,
+                TotalVatAmount = x.TotalVatAmount,
                 TotalPrice = x.TotalPrice
 
             }).ToListAsync();
@@ -100,6 +102,8 @@ namespace DataNexApi.Controllers
             data.ProductId = documentProduct.ProductId;
             data.Price = documentProduct.Price;
             data.Quantity = documentProduct.Quantity;
+            data.VatAmount = documentProduct.VatAmount;
+            data.TotalVatAmount = documentProduct.TotalVatAmount;
             data.TotalPrice = documentProduct.TotalPrice;
             data.ProductSizeId = documentProduct.ProductSizeId;
             data.UserAdded = actionUser.Id;
@@ -132,6 +136,8 @@ namespace DataNexApi.Controllers
             data.DocumentId = documentProduct.DocumentId;
             data.ProductId = documentProduct.ProductId;
             data.Price = documentProduct.Price;
+            data.VatAmount = documentProduct.VatAmount;
+            data.TotalVatAmount = documentProduct.TotalVatAmount;
             data.Quantity = documentProduct.Quantity;
             data.TotalPrice = documentProduct.TotalPrice;
             data.ProductSizeId = documentProduct.ProductSizeId;
@@ -187,6 +193,8 @@ namespace DataNexApi.Controllers
                 CustomerName = x.Document.Customer.Name,
                 ProductId = x.ProductId,
                 Price = x.Price,
+                VatAmount = x.VatAmount,
+                TotalVatAmount = x.TotalVatAmount, 
                 Quantity = x.Quantity,
                 TotalPrice = x.TotalPrice,
                 ProductSizeId = x.ProductSizeId

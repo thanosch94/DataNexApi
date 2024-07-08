@@ -26,6 +26,15 @@ namespace DataNexApi.Controllers
             var data = await _context.VatClasses.ToListAsync();
 
             return Ok(data);
+        }        
+        
+        [HttpGet("getbyid/{id}")]
+        public async Task<IActionResult> GetById(Guid id)
+        {
+            var data = await _context.VatClasses.FirstOrDefaultAsync(x=>x.Id ==id);
+            var dto = _mapper.Map<VatClassDto>(data);
+
+            return Ok(dto);
         }
 
         [HttpPost("insertdto")]
