@@ -265,7 +265,7 @@ namespace DataNexApi.Controllers
             decimal total = 0;
             foreach (var product in documentProducts)
             {
-                total += (decimal)product.Product.Price*product.Quantity;
+                total += (decimal)product.Product.RetailPrice*product.Quantity;
             }
             data.DocumentTotal = total;
             try

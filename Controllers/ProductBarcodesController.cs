@@ -50,6 +50,26 @@ namespace DataNexApi.Controllers
             return Ok(dto);
         }
 
+
+
+        [HttpGet("getbybarcode/{barcode}")]
+        public async Task<IActionResult> GetByBarcode(string barcode)
+        {
+            var product = await _context.ProductBarcodes.Include(x => x.Product).Include(x => x.Size).Where(x => x.Barcode == barcode).Select(x => new ProductBarcodeDto()
+            {
+                ProductId = x.ProductId,
+                ProductName = x.Product.Name,
+                Sku = x.Product.Sku,
+                SizeId = x.SizeId,
+                SizeName = x.Size.Name,
+                ProductRetailPrice = (decimal)x.Product.RetailPrice,
+                VatClassId = x.Product.VatClassId,
+                Barcode =x.Barcode
+            }).FirstOrDefaultAsync();
+
+            return Ok(product);
+        }
+
         [HttpGet("getbyproductid/{productid}")]
         public async Task<IActionResult> GetByProductId(Guid productid)
         {

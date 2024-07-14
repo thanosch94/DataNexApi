@@ -46,24 +46,6 @@ namespace DataNexApi.Controllers
 
         ///TODO move to the correct controller
 
-        [HttpGet("getbybarcode/{barcode}")]
-        public async Task<IActionResult> GetByBarcode(string barcode)
-        {
-            var product = await _context.ProductBarcodes.Include(x => x.Product).Include(x => x.Size).Where(x => x.Barcode == barcode).Select(x => new DocumentProductDto()
-            {
-                ProductId = x.ProductId,
-                ProductName = x.Product.Name,
-                Sku = x.Product.Sku,
-                ProductSizeId = x.Size.Id,
-                SizeName = x.Size.Name,
-                Price = (decimal)x.Product.RetailPrice,
-                Quantity = 1,
-
-            }).FirstOrDefaultAsync();
-
-            return Ok(product);
-        }
-
 
         [HttpGet("getbydocumentid/{id}")]
         public async Task<IActionResult> GetByDocumentId(Guid id)
