@@ -87,6 +87,8 @@ namespace DataNexApi.Controllers
             return Ok(data);
         }
 
+
+
         [HttpPost("insertdto")]
         public async Task<IActionResult> InsertDto([FromBody] ProductBarcodeDto productBarcode)
 

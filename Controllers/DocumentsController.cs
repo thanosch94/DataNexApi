@@ -77,6 +77,7 @@ namespace DataNexApi.Controllers
                 DocumentStatusId = x.DocumentStatusId,
                 DocumentStatusName = x.DocumentStatus.Name,
                 CustomerId =  x.CustomerId,
+                SupplierId = x.SupplierId,
                 CustomerName = x.Customer.Name,
                 CustomerPhone1 =x.Customer.Phone1,
                 DocumentTotal = x.DocumentTotal,
@@ -121,6 +122,7 @@ namespace DataNexApi.Controllers
                 DocumentCode = x.DocumentCode,
                 DocumentStatusId = x.DocumentStatusId,
                 CustomerId = x.CustomerId,
+                SupplierId = x.SupplierId,
                 CustomerName = x.Customer.Name,
                 CustomerPhone1 = x.Customer.Phone1,
                 DocumentTotal = x.DocumentTotal,
@@ -176,6 +178,7 @@ namespace DataNexApi.Controllers
 
             }
             data.CustomerId = document.CustomerId;
+            data.SupplierId = document.SupplierId;
             data.DocumentStatusId = document.DocumentStatusId;
             data.DocumentTotal = document.DocumentTotal;
             data.ShippingAddress = document.ShippingAddress;
@@ -211,7 +214,10 @@ namespace DataNexApi.Controllers
             }
             catch (Exception ex)
             {
-                LogService.CreateLog($"Document could not be inserted by \"{actionUser.UserName}\". Document: {JsonConvert.SerializeObject(data)} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                LogService.CreateLog($"Document could not be inserted by \"{actionUser.UserName}\". Document: {JsonConvert.SerializeObject(data, new JsonSerializerSettings()
+                {
+                    ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
+                })} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
             }
 
@@ -219,8 +225,15 @@ namespace DataNexApi.Controllers
             var dto = _mapper.Map<DocumentDto>(data);
             dto.DocumentTypeName = documentType.Name;
 
-            var customer = await _context.Customers.Where(x=>x.Id==dto.CustomerId).FirstOrDefaultAsync();
-            dto.CustomerPhone1 = customer.Phone1;
+            if (dto.CustomerId != null)
+            {
+                var customer = await _context.Customers.Where(x => x.Id == dto.CustomerId).FirstOrDefaultAsync();
+                dto.CustomerPhone1 = customer.Phone1;
+
+            }else if(dto.SupplierId != null) 
+            {
+                ////
+            }
 
             return Ok(dto);
         }
@@ -238,6 +251,7 @@ namespace DataNexApi.Controllers
             var source = await _context.Documents.Where(x => x.DocumentTypeId == document.DocumentTypeId).OrderByDescending(x => x.DocumentNumber).FirstOrDefaultAsync();
            
             data.CustomerId = document.CustomerId;
+            data.SupplierId = document.SupplierId;
             data.DocumentStatusId = document.DocumentStatusId;
             data.DocumentTotal = document.DocumentTotal;
             data.ShippingAddress = document.ShippingAddress;
@@ -271,11 +285,17 @@ namespace DataNexApi.Controllers
             try
             {
                 await _context.SaveChangesAsync();
-                LogService.CreateLog($"Document updated by \"{actionUser.UserName}\". Document: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                LogService.CreateLog($"Document updated by \"{actionUser.UserName}\". Document: {JsonConvert.SerializeObject(data, new JsonSerializerSettings()
+                {
+                    ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
+                })}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
             }
             catch (Exception ex)
             {
-                LogService.CreateLog($"Document could not be updated by \"{actionUser.UserName}\". Document: {JsonConvert.SerializeObject(data)} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                LogService.CreateLog($"Document could not be updated by \"{actionUser.UserName}\". Document: {JsonConvert.SerializeObject(data, new JsonSerializerSettings()
+                {
+                    ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
+                })} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
             }
 
@@ -295,12 +315,18 @@ namespace DataNexApi.Controllers
             {
                 _context.Documents.Remove(data);
                 await _context.SaveChangesAsync();
-                LogService.CreateLog($"Document deleted by \"{actionUser.UserName}\"  Document: {JsonConvert.SerializeObject(data)}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                LogService.CreateLog($"Document deleted by \"{actionUser.UserName}\"  Document: {JsonConvert.SerializeObject(data, new JsonSerializerSettings()
+                {
+                    ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
+                })}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
             }
             catch (Exception ex)
             {
-                LogService.CreateLog($"Document could not be deleted by \"{actionUser.UserName}\"  Document: {JsonConvert.SerializeObject(data)} Error:{ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                LogService.CreateLog($"Document could not be deleted by \"{actionUser.UserName}\"  Document: {JsonConvert.SerializeObject(data, new JsonSerializerSettings()
+                {
+                    ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
+                })} Error:{ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
             }
             return Ok(data);

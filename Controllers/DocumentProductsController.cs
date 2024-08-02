@@ -61,7 +61,7 @@ namespace DataNexApi.Controllers
                 ProductName = x.Product.Name,
                 Sku = x.Product.Sku,
                 Barcode = x.Product.ProductBarcodes.Where(y => y.SizeId == x.ProductSizeId && y.ProductId == x.ProductId).FirstOrDefault().Barcode,
-                Price = x.Price,
+                ProductRetailPrice = x.Price,
                 VatAmount = x.VatAmount,
                 TotalVatAmount = x.TotalVatAmount,
                 TotalPrice = x.TotalPrice
@@ -74,6 +74,9 @@ namespace DataNexApi.Controllers
             return Ok(dto);
         }
 
+
+
+
         [HttpPost("insertdto")]
         public async Task<IActionResult> InsertDto([FromBody] DocumentProductDto documentProduct)
         {
@@ -82,7 +85,7 @@ namespace DataNexApi.Controllers
             var data = new DocumentProduct();
             data.DocumentId = documentProduct.DocumentId;
             data.ProductId = documentProduct.ProductId;
-            data.Price = documentProduct.Price;
+            data.Price = documentProduct.ProductRetailPrice;
             data.Quantity = documentProduct.Quantity;
             data.VatAmount = documentProduct.VatAmount;
             data.TotalVatAmount = documentProduct.TotalVatAmount;
@@ -117,7 +120,7 @@ namespace DataNexApi.Controllers
 
             data.DocumentId = documentProduct.DocumentId;
             data.ProductId = documentProduct.ProductId;
-            data.Price = documentProduct.Price;
+            data.Price = documentProduct.ProductRetailPrice;
             data.VatAmount = documentProduct.VatAmount;
             data.TotalVatAmount = documentProduct.TotalVatAmount;
             data.Quantity = documentProduct.Quantity;
@@ -174,7 +177,7 @@ namespace DataNexApi.Controllers
                 DocumentCode = x.Document.DocumentType.Name + "-" + (x.Document.DocumentNumber).ToString().PadLeft(6, '0'), //TODO save this to db as it is
                 CustomerName = x.Document.Customer.Name,
                 ProductId = x.ProductId,
-                Price = x.Price,
+                ProductRetailPrice = x.Price,
                 VatAmount = x.VatAmount,
                 TotalVatAmount = x.TotalVatAmount, 
                 Quantity = x.Quantity,
