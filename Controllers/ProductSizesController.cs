@@ -59,6 +59,7 @@ namespace DataNexApi.Controllers
 
             var data = new ProductSize();
             data.Name = productSize.Name;
+            data.Abbreviation = productSize.Abbreviation;
             data.UserAdded = actionUser.Id;
 
             try
@@ -85,7 +86,8 @@ namespace DataNexApi.Controllers
             var data = await _context.ProductSizes.FirstOrDefaultAsync(x => x.Id == productSize.Id);
 
             data.Name = productSize.Name;
-            
+            data.Abbreviation = productSize.Abbreviation;
+
             try
             {
                 await _context.SaveChangesAsync();

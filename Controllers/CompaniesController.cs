@@ -30,6 +30,30 @@ namespace DataNexApi.Controllers
             return Ok(data);
         }
 
+        [AllowAnonymous]
+        [HttpGet("getlookup")]
+        public async Task<IActionResult> GetLookup()
+        {
+            var data = await _context.Companies.Select(x=> new CompanyDto()
+            {
+                Id = x.Id,
+                Name = x.Name,
+            }).ToListAsync();
+
+            return Ok(data);
+        }
+
+        [AllowAnonymous]
+
+        [HttpGet("getbyid/{id}")]
+        public async Task<IActionResult> GetById(Guid id)
+        {
+            var data = await _context.Companies.Where(x=>x.Id==id).FirstOrDefaultAsync();
+
+            return Ok(data);
+        }
+
+
         [HttpPost("insertdto")]
         public async Task<IActionResult> InsertDto([FromBody] CompanyDto dto)
         {
@@ -39,16 +63,28 @@ namespace DataNexApi.Controllers
             data.Name = dto.Name;
             data.UserAdded = actionUser.Id;
 
-            try
-            {
-                _context.Companies.Add(data);
-                await _context.SaveChangesAsync();
-                LogService.CreateLog($"Company \"{data.Name}\" inserted by \"{actionUser.UserName}\"  Brand: {JsonConvert.SerializeObject(data)}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+            var hasDefault = await _context.Companies.AnyAsync(x => x.IsDefault == true);
 
-            }
-            catch (Exception ex)
+            if(hasDefault && dto.IsDefault)
             {
-                LogService.CreateLog($"Company \"{data.Name}\" could not be inserted by \"{actionUser.UserName}\"  Brand: {JsonConvert.SerializeObject(data)} Error: {ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                return BadRequest("A default company already exists");
+            }
+            else
+            {
+                data.IsDefault = dto.IsDefault;
+
+                try
+                {
+                    _context.Companies.Add(data);
+                    await _context.SaveChangesAsync();
+                    LogService.CreateLog($"Company \"{data.Name}\" inserted by \"{actionUser.UserName}\"  Brand: {JsonConvert.SerializeObject(data)}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+
+                }
+                catch (Exception ex)
+                {
+                    LogService.CreateLog($"Company \"{data.Name}\" could not be inserted by \"{actionUser.UserName}\"  Brand: {JsonConvert.SerializeObject(data)} Error: {ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+
+                }
 
             }
 
@@ -66,9 +102,20 @@ namespace DataNexApi.Controllers
             var data = await _context.Companies.FirstOrDefaultAsync(x => x.Id == dto.Id);
 
             data.Name = dto.Name;
+            data.IsDefault = dto.IsDefault;
             data.UserUpdated = actionUser.Id;
             data.DateUpdated = DateTime.Now;
 
+            var defaultCompany = await _context.Companies.FirstOrDefaultAsync(x => x.IsDefault == true);
+
+
+            if (defaultCompany != null)
+            {
+                if (dto.IsDefault == true)
+                {
+                    defaultCompany.IsDefault = false;
+                }
+            }
             try
             {
                 await _context.SaveChangesAsync();

@@ -21,6 +21,7 @@ namespace DataNexApi
         private async Task SeedData(ApplicationDbContext context)
         {
 
+            await SeedCompanies(context);
             await SeedUsers(context);
 
             await SeedDocumentTypes(context);
@@ -51,6 +52,26 @@ namespace DataNexApi
                 context.SaveChanges();
             }
         }
+
+        public async Task SeedCompanies(ApplicationDbContext context)
+        {
+            var company = await context.Companies.FirstOrDefaultAsync(x => x.Id == AppBase.BaseCompany);
+
+            if (company == null)
+            {
+                var companyToAdd = new Company()
+                {
+                    Id = AppBase.BaseCompany,
+                    Name = "Company",
+                    UserAdded = AppBase.DnAdmin,
+                    IsDefault = true,
+                };
+
+                context.Companies.Add(companyToAdd);
+                context.SaveChanges();
+            }
+        }
+
 
         public async Task SeedDocumentTypes(ApplicationDbContext context)
         {

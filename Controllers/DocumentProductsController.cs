@@ -64,6 +64,7 @@ namespace DataNexApi.Controllers
                 ProductRetailPrice = x.Price,
                 VatAmount = x.VatAmount,
                 TotalVatAmount = x.TotalVatAmount,
+                VatClassId = x.Product.VatClassId,
                 TotalPrice = x.TotalPrice
 
             }).ToListAsync();

@@ -32,7 +32,7 @@ namespace DataNexApi.Controllers
                 DocumentTypeId = x.DocumentTypeId,
                 DocumentTypeName = x.DocumentType.Name,
                 DocumentNumber = x.DocumentNumber,
-                DocumentCode = x.DocumentCode,
+                DocumentCode = x.DocumentType.Abbreviation +'-'+ x.DocumentNumber.ToString().PadLeft(6,'0'),
                 DocumentStatusId = x.DocumentStatusId,
                 CustomerId = x.CustomerId,
                 CustomerName = x.Customer.Name,
@@ -275,13 +275,13 @@ namespace DataNexApi.Controllers
             data.UserDate3 = document.UserDate3;
             data.UserDate4 = document.UserDate4;
 
-            var documentProducts = await _context.DocumentProducts.Include(x=>x.Product).Where(x => x.DocumentId == data.Id).ToListAsync();
-            decimal total = 0;
-            foreach (var product in documentProducts)
-            {
-                total += (decimal)product.Product.RetailPrice*product.Quantity;
-            }
-            data.DocumentTotal = total;
+            //var documentProducts = await _context.DocumentProducts.Include(x=>x.Product).Where(x => x.DocumentId == data.Id).ToListAsync();
+            //decimal total = 0;
+            //foreach (var product in documentProducts)
+            //{
+            //    total += (decimal)product.Product.RetailPrice*product.Quantity;
+            //}
+            //data.DocumentTotal = total;
             try
             {
                 await _context.SaveChangesAsync();
