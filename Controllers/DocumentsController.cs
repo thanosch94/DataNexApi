@@ -252,6 +252,7 @@ namespace DataNexApi.Controllers
            
             data.CustomerId = document.CustomerId;
             data.SupplierId = document.SupplierId;
+            data.DocumentDateTime = document.DocumentDateTime;
             data.DocumentStatusId = document.DocumentStatusId;
             data.DocumentTotal = document.DocumentTotal;
             data.ShippingAddress = document.ShippingAddress;
@@ -311,8 +312,14 @@ namespace DataNexApi.Controllers
 
             var data = await _context.Documents.FirstOrDefaultAsync(x => x.Id == id);
 
+            var documentAdditionalCharges = await _context.DocumentAdditionalCharges.Where(x=> x.DocumentId == id).ToListAsync();
             try
             {
+                if(documentAdditionalCharges != null)
+                {
+                    _context.DocumentAdditionalCharges.RemoveRange(documentAdditionalCharges);
+
+                }
                 _context.Documents.Remove(data);
                 await _context.SaveChangesAsync();
                 LogService.CreateLog($"Document deleted by \"{actionUser.UserName}\"  Document: {JsonConvert.SerializeObject(data, new JsonSerializerSettings()
