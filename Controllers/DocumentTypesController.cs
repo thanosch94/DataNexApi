@@ -68,6 +68,8 @@ namespace DataNexApi.Controllers
             data.Abbreviation = documentType.Abbreviation;
             data.DocumentTypeGroup = documentType.DocumentTypeGroup;
             data.IsActive = documentType.IsActive;
+            data.IsPersonBalanceAffected =documentType.IsPersonBalanceAffected;
+            data.IsWareHouseAffected =documentType.IsWareHouseAffected;
             data.UserAdded = actionUser.Id;
 
             try
@@ -103,6 +105,8 @@ namespace DataNexApi.Controllers
                 data.Abbreviation = documentType.Abbreviation;
                 data.DocumentTypeGroup = documentType.DocumentTypeGroup;
                 data.IsActive = documentType.IsActive;
+                data.IsPersonBalanceAffected = documentType.IsPersonBalanceAffected;
+                data.IsWareHouseAffected = documentType.IsWareHouseAffected;
                 try
                 {
                     await _context.SaveChangesAsync();
@@ -122,7 +126,7 @@ namespace DataNexApi.Controllers
             else
             {
                 //If any change made to a seeded entity except IsActive
-                if (data.Name != documentType.Name || data.Description != documentType.Description || data.Abbreviation != documentType.Abbreviation || data.DocumentTypeGroup != documentType.DocumentTypeGroup)
+                if (data.Name != documentType.Name || data.Description != documentType.Description || data.Abbreviation != documentType.Abbreviation || data.DocumentTypeGroup != documentType.DocumentTypeGroup ||data.IsWareHouseAffected!=documentType.IsWareHouseAffected||data.IsPersonBalanceAffected!=documentType.IsPersonBalanceAffected)
                 {
                     return BadRequest("Record cannot be updated. If necessary deactivate it and create a new one.");
                 }
