@@ -68,8 +68,8 @@ namespace DataNexApi.Controllers
             data.Abbreviation = documentType.Abbreviation;
             data.DocumentTypeGroup = documentType.DocumentTypeGroup;
             data.IsActive = documentType.IsActive;
-            data.IsPersonBalanceAffected =documentType.IsPersonBalanceAffected;
-            data.IsWareHouseAffected =documentType.IsWareHouseAffected;
+            data.PersonBalanceAffectBehavior = documentType.PersonBalanceAffectBehavior;
+            data.WareHouseAffectBehavior =documentType.WareHouseAffectBehavior;
             data.UserAdded = actionUser.Id;
 
             try
@@ -105,8 +105,8 @@ namespace DataNexApi.Controllers
                 data.Abbreviation = documentType.Abbreviation;
                 data.DocumentTypeGroup = documentType.DocumentTypeGroup;
                 data.IsActive = documentType.IsActive;
-                data.IsPersonBalanceAffected = documentType.IsPersonBalanceAffected;
-                data.IsWareHouseAffected = documentType.IsWareHouseAffected;
+                data.PersonBalanceAffectBehavior = documentType.PersonBalanceAffectBehavior;
+                data.WareHouseAffectBehavior = documentType.WareHouseAffectBehavior;
                 try
                 {
                     await _context.SaveChangesAsync();
@@ -126,7 +126,7 @@ namespace DataNexApi.Controllers
             else
             {
                 //If any change made to a seeded entity except IsActive
-                if (data.Name != documentType.Name || data.Description != documentType.Description || data.Abbreviation != documentType.Abbreviation || data.DocumentTypeGroup != documentType.DocumentTypeGroup ||data.IsWareHouseAffected!=documentType.IsWareHouseAffected||data.IsPersonBalanceAffected!=documentType.IsPersonBalanceAffected)
+                if (data.Name != documentType.Name || data.Description != documentType.Description || data.Abbreviation != documentType.Abbreviation || data.DocumentTypeGroup != documentType.DocumentTypeGroup ||data.WareHouseAffectBehavior !=documentType.WareHouseAffectBehavior ||data.PersonBalanceAffectBehavior !=documentType.PersonBalanceAffectBehavior)
                 {
                     return BadRequest("Record cannot be updated. If necessary deactivate it and create a new one.");
                 }

@@ -338,5 +338,93 @@ namespace DataNexApi.Controllers
             }
             return Ok(data);
         }
+
+        [HttpGet("getaAccountsPayableListData")]
+        public async Task<IActionResult> GetaAccountsPayableListData()
+        {
+            var data = await _context.Suppliers.Select(x => new AccountPayableDto()
+            {
+                SupplierId = x.Id,
+                SupplierName = x.Name,
+                PayableTotal = x.Documents.Where(x => x.DocumentType.DocumentTypeGroup == DocumentTypeGroupEnum.Purchasing &&x.DocumentType.PersonBalanceAffectBehavior == DocTypeAffectBehaviorEnum.Increase).Select(x => x.DocumentTotal).Sum() - x.Documents.Where(x => x.DocumentType.DocumentTypeGroup == DocumentTypeGroupEnum.Purchasing && x.DocumentType.PersonBalanceAffectBehavior == DocTypeAffectBehaviorEnum.Decrease).Select(x => x.DocumentTotal).Sum(),
+            }).OrderByDescending(x=>x.PayableTotal).ToListAsync();
+
+            return Ok(data);
+        }
+
+
+        [HttpGet("getChargeableDocumentsBySupplierId/{id}")]
+        public async Task<IActionResult> GetChargeableDocumentsBySupplierId(Guid id)
+        {
+            var documents = await _context.Suppliers.Where(x=>x.Id==id).Select(x => x.Documents).FirstOrDefaultAsync();
+
+            if (documents != null)
+            {
+                foreach (var document in documents)
+                {
+                    var documentType = await _context.DocumentTypes
+                        .Where(x => x.Id == document.DocumentTypeId)
+                        .Select(x => new DocumentTypeDto()
+                        {
+                            PersonBalanceAffectBehavior = x.PersonBalanceAffectBehavior
+                        })
+                        .FirstOrDefaultAsync();
+                    if (documentType.PersonBalanceAffectBehavior == DocTypeAffectBehaviorEnum.None)
+                    {
+                        documents.Remove(document);
+                    }
+                    else if (documentType.PersonBalanceAffectBehavior == DocTypeAffectBehaviorEnum.Decrease)
+                    {
+                        document.DocumentTotal = -document.DocumentTotal;
+                    }
+                }
+            }
+           
+            return Ok(documents);
+        }
+
+        [HttpGet("getaAccountsReceivableListData")]
+        public async Task<IActionResult> GetaAccountsReceivableListData()
+        {
+            var data = await _context.Customers.Select(x => new AccountReceivableDto()
+            {
+                CustomerId = x.Id,
+                CustomerName = x.Name,
+                ReceivableTotal = x.Documents.Where(x => x.DocumentType.DocumentTypeGroup == DocumentTypeGroupEnum.Sales && x.DocumentType.PersonBalanceAffectBehavior == DocTypeAffectBehaviorEnum.Increase).Select(x => x.DocumentTotal).Sum() - x.Documents.Where(x => x.DocumentType.DocumentTypeGroup == DocumentTypeGroupEnum.Sales && x.DocumentType.PersonBalanceAffectBehavior == DocTypeAffectBehaviorEnum.Decrease).Select(x => x.DocumentTotal).Sum(),
+            }).OrderByDescending(x => x.ReceivableTotal).ToListAsync();
+
+            return Ok(data);
+        }
+
+        [HttpGet("getChargeableDocumentsByCustomerId/{id}")]
+        public async Task<IActionResult> GetChargeableDocumentsByCustomerId(Guid id)
+        {
+            var documents = await _context.Customers.Where(x => x.Id == id).Select(x => x.Documents).FirstOrDefaultAsync();
+
+            if (documents != null)
+            {
+                foreach (var document in documents)
+                {
+                    var documentType = await _context.DocumentTypes
+                        .Where(x => x.Id == document.DocumentTypeId)
+                        .Select(x => new DocumentTypeDto()
+                        {
+                            Name=x.Name,
+                            PersonBalanceAffectBehavior = x.PersonBalanceAffectBehavior
+                        })
+                        .FirstOrDefaultAsync();
+                    if (documentType.PersonBalanceAffectBehavior == DocTypeAffectBehaviorEnum.None)
+                    {
+                        documents.Remove(document);
+                    }
+                    else if (documentType.PersonBalanceAffectBehavior == DocTypeAffectBehaviorEnum.Decrease)
+                    {
+                        document.DocumentTotal = -document.DocumentTotal;
+                    }
+                }
+            }
+            
+            return Ok(documents);
+        }
     }
 }
