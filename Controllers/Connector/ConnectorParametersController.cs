@@ -18,7 +18,7 @@ namespace DataNexApi.Controllers.Connector
         private ApplicationDbContext _context;
         private IMapper _mapper;
 
-        public ConnectorParametersController(ApplicationDbContext context, IMapper mapper)
+        public ConnectorParametersController(ApplicationDbContext context, IMapper mapper):base(context) 
         {
             _context = context;
             _mapper = mapper;
@@ -43,18 +43,25 @@ namespace DataNexApi.Controllers.Connector
             data.WooConsumerKey = connectorParameters.WooConsumerKey;
             data.WooConsumerSecret = connectorParameters.WooConsumerSecret;
 
-            try
+            await ExecuteTransaction(async () =>
             {
-                _context.ConnectorParameters.Add(data);
-                await _context.SaveChangesAsync();
-                LogService.CreateLog($"Connector parameters inserted by \"{actionUser.UserName}\"  Connector Parameters: {JsonConvert.SerializeObject(data)}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                var maxNumber = _context.ConnectorParameters.Max(x => (x.SerialNumber)) ?? 0;
+                data.SerialNumber = maxNumber + 1;
+                data.Code = data.SerialNumber.ToString().PadLeft(5, '0');
 
-            }
-            catch (Exception ex)
-            {
-                LogService.CreateLog($"Connector parameters could not be inserted by \"{actionUser.UserName}\"  Connector Parameters: {JsonConvert.SerializeObject(data)} Error: {ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                try
+                {
+                    _context.ConnectorParameters.Add(data);
+                    await _context.SaveChangesAsync();
+                    LogService.CreateLog($"Connector parameters inserted by \"{actionUser.UserName}\"  Connector Parameters: {JsonConvert.SerializeObject(data)}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
-            }
+                }
+                catch (Exception ex)
+                {
+                    LogService.CreateLog($"Connector parameters could not be inserted by \"{actionUser.UserName}\"  Connector Parameters: {JsonConvert.SerializeObject(data)} Error: {ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                    throw;
+                }
+            });
 
 
             var dto = _mapper.Map<ConnectorParametersDto>(data);

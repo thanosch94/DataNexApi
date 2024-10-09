@@ -17,7 +17,7 @@ namespace DataNexApi.Controllers
 
         private ApplicationDbContext _context;
         private IMapper _mapper;
-        public DocumentProductsController(ApplicationDbContext context, IMapper mapper)
+        public DocumentProductsController(ApplicationDbContext context, IMapper mapper):base(context)
         {
             _context = context;
             _mapper = mapper;
@@ -53,6 +53,8 @@ namespace DataNexApi.Controllers
             var data = await _context.DocumentProducts.Include(x => x.Product).ThenInclude(x => x.ProductBarcodes).Include(x => x.ProductSize).Where(x => x.DocumentId == id).Select(x => new DocumentProductDto()
             {
                 Id = x.Id,
+                SerialNumber = x.SerialNumber,
+                Code = x.Code,
                 DocumentId = x.DocumentId,
                 ProductId = x.ProductId,
                 Quantity = x.Quantity,
@@ -67,7 +69,7 @@ namespace DataNexApi.Controllers
                 VatClassId = x.Product.VatClassId,
                 TotalPrice = x.TotalPrice
 
-            }).ToListAsync();
+            }).AsSplitQuery().ToListAsync();
 
             var dto = _mapper.Map<List<DocumentProductDto>>(data);
 
@@ -94,19 +96,28 @@ namespace DataNexApi.Controllers
             data.ProductSizeId = documentProduct.ProductSizeId;
             data.UserAdded = actionUser.Id;
 
-            _context.DocumentProducts.Add(data);
 
-            try
+
+            await ExecuteTransaction(async () =>
             {
-                await _context.SaveChangesAsync();
-                LogService.CreateLog($"Document product inserted by \"{actionUser.UserName}\". Document product: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                var maxNumber = _context.DocumentProducts.Max(x => (x.SerialNumber)) ?? 0;
+                data.SerialNumber = maxNumber + 1;
+                data.Code = data.SerialNumber.ToString().PadLeft(5, '0');
 
-            }
-            catch (Exception ex) 
-            {
-                LogService.CreateLog($"Document product could not be inserted by \"{actionUser.UserName}\". Document product: {JsonConvert.SerializeObject(data)}  Error:{ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                try
+                {
+                    _context.DocumentProducts.Add(data);
 
-            }
+                    await _context.SaveChangesAsync();
+                    LogService.CreateLog($"Document product inserted by \"{actionUser.UserName}\". Document product: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+
+                }
+                catch (Exception ex)
+                {
+                    LogService.CreateLog($"Document product could not be inserted by \"{actionUser.UserName}\". Document product: {JsonConvert.SerializeObject(data)}  Error:{ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                    throw;
+                }
+            });
             var dto = _mapper.Map<DocumentProductDto>(data);
 
             return Ok(dto);
@@ -172,6 +183,8 @@ namespace DataNexApi.Controllers
             var data = await _context.DocumentProducts.Include(x => x.Document).Include(x => x.Product).Where(x => x.ProductId == productId).Select(x => new DocumentProductDto()
             {
                 Id = x.Id,
+                SerialNumber = x.SerialNumber,
+                Code = x.Code,
                 DocumentDateString = x.Document.DocumentDateTime.DateTime.ToString("dd-MM-yyyy"),
                 DocumentDate = x.Document.DocumentDateTime,
                 Sku = x.Product.Sku,

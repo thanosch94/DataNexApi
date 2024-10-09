@@ -16,7 +16,7 @@ namespace DataNexApi.Controllers
     {
         private ApplicationDbContext _context;
         private IMapper _mapper;
-        public ProductSizesController(ApplicationDbContext context, IMapper mapper)
+        public ProductSizesController(ApplicationDbContext context, IMapper mapper):base(context)
         {
             _context = context;
             _mapper = mapper;
@@ -62,17 +62,24 @@ namespace DataNexApi.Controllers
             data.Abbreviation = productSize.Abbreviation;
             data.UserAdded = actionUser.Id;
 
-            try
+            await ExecuteTransaction(async () =>
             {
-                _context.ProductSizes.Add(data);
-                await _context.SaveChangesAsync();
-                LogService.CreateLog($"Product Size \"{data.Name}\" inserted by \"{actionUser.UserName}\". Product Size: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
-            }
-            catch (Exception ex) 
-            {
-                LogService.CreateLog($"Product Size \"{data.Name}\" could not be inserted by \"{actionUser.UserName}\". Product Size: {JsonConvert.SerializeObject(data)} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
-            }
+                var maxNumber = _context.ProductSizes.Max(x => (x.SerialNumber)) ?? 0;
+                data.SerialNumber = maxNumber + 1;
+                data.Code = data.SerialNumber.ToString().PadLeft(5, '0');
 
+                try
+                {
+                    _context.ProductSizes.Add(data);
+                    await _context.SaveChangesAsync();
+                    LogService.CreateLog($"Product Size \"{data.Name}\" inserted by \"{actionUser.UserName}\". Product Size: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                }
+                catch (Exception ex)
+                {
+                    LogService.CreateLog($"Product Size \"{data.Name}\" could not be inserted by \"{actionUser.UserName}\". Product Size: {JsonConvert.SerializeObject(data)} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                    throw;
+                }
+            });
             var dto = _mapper.Map<ProductSizeDto>(data);
 
             return Ok(dto);

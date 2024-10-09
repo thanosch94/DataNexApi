@@ -16,7 +16,7 @@ namespace DataNexApi.Controllers
     {
         private ApplicationDbContext _context;
         private IMapper _mapper;
-        public DocumentAdditionalChargesController(ApplicationDbContext context, IMapper mapper)
+        public DocumentAdditionalChargesController(ApplicationDbContext context, IMapper mapper):base(context)
         {
             _context = context;
             _mapper = mapper;
@@ -58,20 +58,25 @@ namespace DataNexApi.Controllers
             {
                 document.DocumentTotal += documentAdditionalCharge.AdditionalChargeAmount;
             }
-
-            try
+            await ExecuteTransaction(async () =>
             {
-                _context.DocumentAdditionalCharges.Add(data);
-                await _context.SaveChangesAsync();
-                LogService.CreateLog($"Document Additional Charge inserted by \"{actionUser.UserName}\"  Document Additional Charge: {JsonConvert.SerializeObject(data)}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                var maxNumber = _context.DocumentAdditionalCharges.Max(x => (x.SerialNumber)) ?? 0;
+                data.SerialNumber = maxNumber + 1;
+                data.Code = data.SerialNumber.ToString().PadLeft(5, '0');
 
-            }
-            catch (Exception ex)
-            {
-                LogService.CreateLog($"Document Additional Charge could not be inserted by \"{actionUser.UserName}\" Document Additional Charge: {JsonConvert.SerializeObject(data)} Error: {ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                try
+                {
+                    _context.DocumentAdditionalCharges.Add(data);
+                    await _context.SaveChangesAsync();
+                    LogService.CreateLog($"Document Additional Charge inserted by \"{actionUser.UserName}\"  Document Additional Charge: {JsonConvert.SerializeObject(data)}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
-            }
-
+                }
+                catch (Exception ex)
+                {
+                    LogService.CreateLog($"Document Additional Charge could not be inserted by \"{actionUser.UserName}\" Document Additional Charge: {JsonConvert.SerializeObject(data)} Error: {ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                    throw;
+                }
+            });
             var dto = _mapper.Map<DocumentAdditionalChargeDto>(data);
 
             return Ok(dto);

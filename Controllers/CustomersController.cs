@@ -17,7 +17,7 @@ namespace DataNexApi.Controllers
     {
         private ApplicationDbContext _context;
         private IMapper _mapper;
-        public CustomersController(ApplicationDbContext context, IMapper mapper)
+        public CustomersController(ApplicationDbContext context, IMapper mapper) : base(context)
         {
             _context = context;
             _mapper = mapper;
@@ -82,18 +82,27 @@ namespace DataNexApi.Controllers
             data.TaxOffice = customer.TaxOffice;
             data.UserAdded = actionUser.Id;
 
-            try
+            await ExecuteTransaction(async() =>
             {
-                _context.Customers.Add(data);
-                await _context.SaveChangesAsync();
-                LogService.CreateLog($"Customer \"{data.Name}\" inserted by \"{actionUser.UserName}\". Customer: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                try
+                {
+                    var maxNumber = _context.Customers.Max(x => (x.SerialNumber)) ?? 0;
+                    data.SerialNumber = maxNumber + 1;
+                    data.Code = data.SerialNumber.ToString().PadLeft(5, '0');
 
-            }
-            catch (Exception ex)
-            {
-                LogService.CreateLog($"Customer \"{data.Name}\" could not be inserted by \"{actionUser.UserName}\" Customer: {JsonConvert.SerializeObject(data)} Error:{ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
-            }
+                    _context.Customers.Add(data);
+                    await _context.SaveChangesAsync();
+                    LogService.CreateLog($"Customer \"{data.Name}\" inserted by \"{actionUser.UserName}\". Customer: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
+                }
+                catch (Exception ex)
+                {
+                    LogService.CreateLog($"Customer \"{data.Name}\" could not be inserted by \"{actionUser.UserName}\" Customer: {JsonConvert.SerializeObject(data)} Error:{ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                    throw;
+                }
+
+            });
+            
 
             var dto = _mapper.Map<CustomerDto>(data);
 

@@ -18,7 +18,7 @@ namespace DataNexApi.Controllers
     {
         private ApplicationDbContext _context;
         private IMapper _mapper;
-        public BrandsController(ApplicationDbContext context, IMapper mapper)
+        public BrandsController(ApplicationDbContext context, IMapper mapper):base(context)
         {
             _context = context;
             _mapper = mapper;
@@ -59,24 +59,31 @@ namespace DataNexApi.Controllers
         public async Task<IActionResult> InsertDto([FromBody] BrandDto brand)
         {
             var actionUser = await GetActionUser();
-
             var data = new Brand();
+            var source = await _context.Brands.OrderByDescending(x => x.SerialNumber).FirstOrDefaultAsync();
+
             data.Name = brand.Name;
             data.UserAdded = actionUser.Id;
-
-            try
+            await ExecuteTransaction(async() =>
             {
-                _context.Brands.Add(data);
-                await _context.SaveChangesAsync();
-                LogService.CreateLog($"Brand \"{data.Name}\" inserted by \"{actionUser.UserName}\"  Brand: {JsonConvert.SerializeObject(data)}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                var maxNumber = _context.Brands.Max(x => (x.SerialNumber)) ?? 0;
+                data.SerialNumber = maxNumber+1;
+                data.Code = data.SerialNumber.ToString().PadLeft(5, '0');
 
-            }
-            catch (Exception ex)
-            {
-                LogService.CreateLog($"Brand \"{data.Name}\" could not be inserted by \"{actionUser.UserName}\"  Brand: {JsonConvert.SerializeObject(data)} Error: {ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                try
+                {
+                    _context.Brands.Add(data);
+                    await _context.SaveChangesAsync();
+                    LogService.CreateLog($"Brand \"{data.Name}\" inserted by \"{actionUser.UserName}\"  Brand: {JsonConvert.SerializeObject(data)}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
-            }
+                }
+                catch (Exception ex)
+                {
+                    LogService.CreateLog($"Brand \"{data.Name}\" could not be inserted by \"{actionUser.UserName}\"  Brand: {JsonConvert.SerializeObject(data)} Error: {ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                    throw;
+                }
 
+            });
 
             var dto = _mapper.Map<BrandDto>(data);
 
@@ -131,5 +138,8 @@ namespace DataNexApi.Controllers
             }
             return Ok(data);
         }
+
+   
+
     }
 }

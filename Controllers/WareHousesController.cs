@@ -17,7 +17,7 @@ namespace DataNexApi.Controllers
 
         private ApplicationDbContext _context;
         private IMapper _mapper;
-        public WareHousesController(ApplicationDbContext context, IMapper mapper)
+        public WareHousesController(ApplicationDbContext context, IMapper mapper):base(context)
         {
             _context = context;
             _mapper = mapper;
@@ -46,28 +46,26 @@ namespace DataNexApi.Controllers
                 data.UserAdded = actionUser.Id;
                 data.IsDefault = wareHouse.IsDefault;
                 data.CompanyId = wareHouse.CompanyId;
-                var lastWareHouseInserted = await _context.WareHouses.OrderByDescending(x => x.DateAdded).FirstOrDefaultAsync();
-                if(lastWareHouseInserted != null)
-                {
-                    data.Code = (lastWareHouseInserted.Code + 1).ToString().PadLeft(6, '0');
 
-                }
-                else
+                await ExecuteTransaction(async () =>
                 {
-                    data.Code = (1).ToString().PadLeft(6, '0');
-                }
+                    var maxNumber = _context.WareHouses.Max(x => (x.SerialNumber)) ?? 0;
+                    data.SerialNumber = maxNumber + 1;
+                    data.Code = data.SerialNumber.ToString().PadLeft(5, '0');
 
-                try
-                {
-                    _context.WareHouses.Add(data);
-                    await _context.SaveChangesAsync();
-                    LogService.CreateLog($"Warehouse \"{data.Name}\" inserted by \"{actionUser.UserName}\". Warehouse: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                    try
+                    {
+                        _context.WareHouses.Add(data);
+                        await _context.SaveChangesAsync();
+                        LogService.CreateLog($"Warehouse \"{data.Name}\" inserted by \"{actionUser.UserName}\". Warehouse: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
-                }
-                catch (Exception ex)
-                {
-                    LogService.CreateLog($"Warehouse \"{data.Name}\" could not be inserted by \"{actionUser.UserName}\". Warehouse: {JsonConvert.SerializeObject(data)} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
-                }
+                    }
+                    catch (Exception ex)
+                    {
+                        LogService.CreateLog($"Warehouse \"{data.Name}\" could not be inserted by \"{actionUser.UserName}\". Warehouse: {JsonConvert.SerializeObject(data)} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                        throw;
+                    }
+                });
 
                 return Ok(data);
             }

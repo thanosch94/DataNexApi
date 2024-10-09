@@ -16,7 +16,7 @@ namespace DataNexApi.Controllers
     {
         private ApplicationDbContext _context;
         private IMapper _mapper;
-        public DocumentsController(ApplicationDbContext context, IMapper mapper)
+        public DocumentsController(ApplicationDbContext context, IMapper mapper):base(context)
         {
             _context = context;
             _mapper = mapper;
@@ -28,6 +28,8 @@ namespace DataNexApi.Controllers
             var data = await _context.Documents.Include(x => x.Customer).Include(x => x.DocumentType).OrderByDescending(x=>x.DocumentNumber).Select(x => new DocumentDto()
             {
                 Id = x.Id,
+                Code = x.Code,
+                SerialNumber = x.SerialNumber,
                 DocumentDateTime = x.DocumentDateTime,
                 DocumentTypeId = x.DocumentTypeId,
                 DocumentTypeName = x.DocumentType.Name,
@@ -69,6 +71,8 @@ namespace DataNexApi.Controllers
             var data = await _context.Documents.Include(x => x.DocumentStatus).Include(x=>x.Customer).Include(x=>x.DocumentType).Where(x => x.Id == id).Select(x=>new DocumentDto()
             {
                 Id = x.Id,
+                Code = x.Code,
+                SerialNumber = x.SerialNumber,
                 DocumentDateTime = x.DocumentDateTime,
                 DocumentTypeId = x.DocumentTypeId,
                 DocumentCode  = x.DocumentCode,
@@ -115,6 +119,8 @@ namespace DataNexApi.Controllers
             var data = await _context.Documents.Where(x => x.DocumentType.DocumentTypeGroup == documentTypeGroup).Select(x => new DocumentDto()
             {
                 Id = x.Id,
+                Code = x.Code,
+                SerialNumber = x.SerialNumber,
                 DocumentDateTime = x.DocumentDateTime,
                 DocumentTypeId = x.DocumentTypeId,
                 DocumentTypeName = x.DocumentType.Name,
@@ -203,23 +209,31 @@ namespace DataNexApi.Controllers
             data.UserDate4 = document.UserDate4;
             data.UserAdded = actionUser.Id;
 
-            try
+            await ExecuteTransaction(async () =>
             {
-                _context.Documents.Add(data);
-                await _context.SaveChangesAsync();
-                LogService.CreateLog($"New document inserted by \"{actionUser.UserName}\". Document: {JsonConvert.SerializeObject(data, new JsonSerializerSettings()
-                {
-                    ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
-                })}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
-            }
-            catch (Exception ex)
-            {
-                LogService.CreateLog($"Document could not be inserted by \"{actionUser.UserName}\". Document: {JsonConvert.SerializeObject(data, new JsonSerializerSettings()
-                {
-                    ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
-                })} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                var maxNumber = _context.Documents.Max(x => (x.SerialNumber)) ?? 0;
+                data.SerialNumber = maxNumber + 1;
+                data.Code = data.SerialNumber.ToString().PadLeft(6, '0');
 
-            }
+                try
+                {
+                    _context.Documents.Add(data);
+                    await _context.SaveChangesAsync();
+                    LogService.CreateLog($"New document inserted by \"{actionUser.UserName}\". Document: {JsonConvert.SerializeObject(data, new JsonSerializerSettings()
+                    {
+                        ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
+                    })}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                }
+                catch (Exception ex)
+                {
+                    LogService.CreateLog($"Document could not be inserted by \"{actionUser.UserName}\". Document: {JsonConvert.SerializeObject(data, new JsonSerializerSettings()
+                    {
+                        ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
+                    })} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                    throw;
+                }
+            });
+            
 
 
             var dto = _mapper.Map<DocumentDto>(data);

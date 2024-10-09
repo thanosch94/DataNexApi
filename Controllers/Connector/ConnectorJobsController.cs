@@ -21,7 +21,7 @@ namespace DataNexApi.Controllers.Connector
         private ApplicationDbContext _context;
         private IMapper _mapper;
 
-        public ConnectorJobsController(ApplicationDbContext context, IMapper mapper)
+        public ConnectorJobsController(ApplicationDbContext context, IMapper mapper):base(context)
         {
             _context = context;
             _mapper = mapper;
@@ -44,6 +44,8 @@ namespace DataNexApi.Controllers.Connector
             var data = await _context.ConnectorJobs.Where(x => x.Id == id).Select(x => new ConnectorJobDto()
             {
                 Id = x.Id,
+                SerialNumber = x.SerialNumber,
+                Code = x.Code,
                 Name = x.Name,
                 Icon = x.Icon,
                 Description = x.Description,
@@ -62,6 +64,8 @@ namespace DataNexApi.Controllers.Connector
             var data = await _context.ConnectorJobs.Where(x => x.JobType == jobType).Select(x => new ConnectorJobDto()
             {
                 Id = x.Id,
+                SerialNumber = x.SerialNumber,
+                Code = x.Code,
                 Name = x.Name,
                 Icon = x.Icon,
                 Description = x.Description,
@@ -79,6 +83,8 @@ namespace DataNexApi.Controllers.Connector
             var data = await _context.ConnectorJobs.Where(x => x.DataSourceId == id).Select(x => new ConnectorJobDto()
             {
                 Id = x.Id,
+                SerialNumber = x.SerialNumber,
+                Code = x.Code,
                 Name = x.Name,
                 Icon = x.Icon,
                 Description = x.Description,
@@ -102,19 +108,25 @@ namespace DataNexApi.Controllers.Connector
             data.JobType = connectorJobDto.JobType;
             data.DataSourceId = connectorJobDto.DataSourceId;
             data.WooConnectionDataSourceId = connectorJobDto.WooConnectionDataSourceId;
-
-            try
+            await ExecuteTransaction(async () =>
             {
-                _context.ConnectorJobs.Add(data);
-                await _context.SaveChangesAsync();
-                LogService.CreateLog($"Connector job inserted by \"{actionUser.UserName}\"  Connector Job: {JsonConvert.SerializeObject(data)}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                var maxNumber = _context.ConnectorJobs.Max(x => (x.SerialNumber)) ?? 0;
+                data.SerialNumber = maxNumber + 1;
+                data.Code = data.SerialNumber.ToString().PadLeft(5, '0');
 
-            }
-            catch (Exception ex)
-            {
-                LogService.CreateLog($"Connector Job could not be inserted by \"{actionUser.UserName}\"  Connector Job: {JsonConvert.SerializeObject(data)} Error: {ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                try
+                {
+                    _context.ConnectorJobs.Add(data);
+                    await _context.SaveChangesAsync();
+                    LogService.CreateLog($"Connector job inserted by \"{actionUser.UserName}\"  Connector Job: {JsonConvert.SerializeObject(data)}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
-            }
+                }
+                catch (Exception ex)
+                {
+                    LogService.CreateLog($"Connector Job could not be inserted by \"{actionUser.UserName}\"  Connector Job: {JsonConvert.SerializeObject(data)} Error: {ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                    throw;
+                }
+            });
 
             var dto = _mapper.Map<ConnectorJobDto>(data);
 

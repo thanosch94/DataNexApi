@@ -16,7 +16,7 @@ namespace DataNexApi.Controllers
     {
         private ApplicationDbContext _context;
         private IMapper _mapper;
-        public UsersController(ApplicationDbContext context, IMapper mapper)
+        public UsersController(ApplicationDbContext context, IMapper mapper):base(context)  
         {
             _context = context;
             _mapper = mapper;
@@ -56,18 +56,25 @@ namespace DataNexApi.Controllers
                 data.PasswordHash = BCrypt.Net.BCrypt.EnhancedHashPassword(dto.Password);
                 data.UserAdded = actionUser.Id;
 
-                try
+                await ExecuteTransaction(async () =>
                 {
-                     _context.Users.Add(data);
-                     await _context.SaveChangesAsync();
-                    LogService.CreateLog($"User \"{data.Name}\" inserted by \"{actionUser.UserName}\". User: {data.Id}, {data.Name}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                    var maxNumber = _context.Users.Max(x => (x.SerialNumber)) ?? 0;
+                    data.SerialNumber = maxNumber + 1;
+                    data.Code = data.SerialNumber.ToString().PadLeft(5, '0');
 
-                }
-                catch (Exception ex)
-                {
-                    LogService.CreateLog($"User \"{data.Name}\" could not be inserted by \"{actionUser.UserName}\". User: {data.Id}, {data.Name} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                    try
+                    {
+                        _context.Users.Add(data);
+                        await _context.SaveChangesAsync();
+                        LogService.CreateLog($"User \"{data.Name}\" inserted by \"{actionUser.UserName}\". User: {data.Id}, {data.Name}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
-                }
+                    }
+                    catch (Exception ex)
+                    {
+                        LogService.CreateLog($"User \"{data.Name}\" could not be inserted by \"{actionUser.UserName}\". User: {data.Id}, {data.Name} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                        throw;
+                    }
+                });
 
                 var dtoData = _mapper.Map<UserDto>(data);
 

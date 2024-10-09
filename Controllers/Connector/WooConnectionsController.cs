@@ -42,18 +42,26 @@ namespace DataNexApi.Controllers.Connector
             data.RequestType = wooConnectionsDataDto.RequestType;
             data.Endpoint = wooConnectionsDataDto.Endpoint;
             data.WooEntity = wooConnectionsDataDto.WooEntity;
-            try
-            {
-                _context.WooConnectionsData.Add(data);
-                await _context.SaveChangesAsync();
-                LogService.CreateLog($"Woo Connection data inserted by \"{actionUser.UserName}\"  Data: {JsonConvert.SerializeObject(data)}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
-            }
-            catch (Exception ex)
+            await ExecuteTransaction(async () =>
             {
-                LogService.CreateLog($"Woo Connection data could not be inserted by \"{actionUser.UserName}\"  Data: {JsonConvert.SerializeObject(data)} Error: {ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                var maxNumber = _context.WooConnectionsData.Max(x => (x.SerialNumber)) ?? 0;
+                data.SerialNumber = maxNumber + 1;
+                data.Code = data.SerialNumber.ToString().PadLeft(5, '0');
 
-            }
+                try
+                {
+                    _context.WooConnectionsData.Add(data);
+                    await _context.SaveChangesAsync();
+                    LogService.CreateLog($"Woo Connection data inserted by \"{actionUser.UserName}\"  Data: {JsonConvert.SerializeObject(data)}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+
+                }
+                catch (Exception ex)
+                {
+                    LogService.CreateLog($"Woo Connection data could not be inserted by \"{actionUser.UserName}\"  Data: {JsonConvert.SerializeObject(data)} Error: {ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+
+                }
+            });
 
 
             var dto = _mapper.Map<WooConnectionsDataDto>(data);

@@ -18,7 +18,7 @@ namespace DataNexApi.Controllers
 
         private ApplicationDbContext _context;
         private IMapper _mapper;
-        public ProductsController(ApplicationDbContext context, IMapper mapper)
+        public ProductsController(ApplicationDbContext context, IMapper mapper) : base(context)
         {
             _context = context;
             _mapper = mapper;
@@ -30,6 +30,8 @@ namespace DataNexApi.Controllers
             var data = await _context.Products.Include(x => x.Brand).Select(x => new ProductDto()
             {
                 Id = x.Id,
+                SerialNumber = x.SerialNumber,
+                Code = x.Code,
                 Name = x.Name,
                 Sku = x.Sku,
                 Description = x.Description,
@@ -51,6 +53,8 @@ namespace DataNexApi.Controllers
             var data = await _context.Products.Include(x => x.Brand).Where(x => x.Id == id).Select(x => new ProductDto()
             {
                 Id = x.Id,
+                SerialNumber = x.SerialNumber,
+                Code = x.Code,
                 Name = x.Name,
                 Sku = x.Sku,
                 Description = x.Description,
@@ -108,17 +112,25 @@ namespace DataNexApi.Controllers
             data.VatClassId = product.VatClassId;
             data.UserAdded = actionUser.Id;
 
-            try
-            {
-                _context.Products.Add(data);
-                await _context.SaveChangesAsync();
-                LogService.CreateLog($"Product \"{data.Name}\" inserted by \"{actionUser.UserName}\". Product: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
-            }
-            catch (Exception ex)
-            {
-                LogService.CreateLog($"Product \"{data.Name}\" could not be inserted by \"{actionUser.UserName}\". Product: {JsonConvert.SerializeObject(data)} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
-            }
 
+            await ExecuteTransaction(async () =>
+            {
+                var maxNumber = _context.Products.Max(x => (x.SerialNumber)) ?? 0;
+                data.SerialNumber = maxNumber + 1;
+                data.Code = data.SerialNumber.ToString().PadLeft(5, '0');
+
+                try
+                {
+                    _context.Products.Add(data);
+                    await _context.SaveChangesAsync();
+                    LogService.CreateLog($"Product \"{data.Name}\" inserted by \"{actionUser.UserName}\". Product: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                }
+                catch (Exception ex)
+                {
+                    LogService.CreateLog($"Product \"{data.Name}\" could not be inserted by \"{actionUser.UserName}\". Product: {JsonConvert.SerializeObject(data)} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                    throw;
+                }
+            });
             var dto = _mapper.Map<ProductDto>(data);
 
             return Ok(dto);

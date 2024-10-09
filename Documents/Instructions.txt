@@ -1,5 +1,5 @@
 Migration
-1. Add-Migration ChangedIsWareHouseAndPersonBalanceAffectedToEnums -Project DataNex.Data -context ApplicationDbContext -Args "--SqlServer"
+1. Add-Migration AddedSerialNumberAndCodeToAllEntities -Project DataNex.Data -context ApplicationDbContext -Args "--SqlServer"
 2. Update-Database -context MsSqlDbContext
 3. Script-Migration -i 0 -context ApplicationDbContext
 
@@ -9,6 +9,21 @@ Migration
 
 
 MySQL
-1. Add-Migration AddedCompanies -Project DataNex.Data -OutputDir MySqlMigrations -context MySqlDbContext -Args "--Mysql"
+1. Add-Migration AddedSerialNumberAndCodeToAllEntities -Project DataNex.Data -OutputDir MySqlMigrations -context MySqlDbContext -Args "--Mysql"
 2. Update-Database -context MySqlDbContext
 3. Script-Migration -i 0 -context MySqlDbContext
+
+
+
+
+//Controllers
+1. Must send context to BaseController -- :base(context)
+
+e.g.    public CustomersController(ApplicationDbContext context, IMapper mapper) : base(context)
+        {
+            _context = context;
+            _mapper = mapper;
+        }
+
+2. Insert Endpoints must have ExecuteTransaction which is inherited from BaseController in order to keep serial numbers unique for each entity without the risk of many users adding at the same time data in the table
+3. If in the method we have a try catch block throw; is necessary in order to rollback transaction

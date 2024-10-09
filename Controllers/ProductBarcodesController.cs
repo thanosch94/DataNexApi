@@ -16,7 +16,7 @@ namespace DataNexApi.Controllers
     {
         private ApplicationDbContext _context;
         private IMapper _mapper;
-        public ProductBarcodesController(ApplicationDbContext context, IMapper mapper)
+        public ProductBarcodesController(ApplicationDbContext context, IMapper mapper):base(context)
         {
             _context = context;
             _mapper = mapper;
@@ -57,6 +57,9 @@ namespace DataNexApi.Controllers
         {
             var product = await _context.ProductBarcodes.Include(x => x.Product).Include(x => x.Size).Where(x => x.Barcode == barcode).Select(x => new ProductBarcodeDto()
             {
+                Id= x.Id,
+                SerialNumber = x.SerialNumber,
+                Code = x.Code,
                 ProductId = x.ProductId,
                 ProductName = x.Product.Name,
                 Sku = x.Product.Sku,
@@ -76,6 +79,8 @@ namespace DataNexApi.Controllers
             var data = await _context.ProductBarcodes.Include(x => x.Size).Where(x => x.ProductId == productid).Select(x => new ProductBarcodeDto()
             {
                 Id = x.Id,
+                SerialNumber = x.SerialNumber,
+                Code = x.Code,
                 ProductId = x.ProductId,
                 SizeId = x.SizeId,
                 SizeName = x.Size.Name,
@@ -121,17 +126,24 @@ namespace DataNexApi.Controllers
             else
             {
 
-                try
-                {                
-                    _context.ProductBarcodes.Add(data);
-                    await _context.SaveChangesAsync();
-                    LogService.CreateLog($"Product Barcode  \"{data.Barcode}\" inserted by \"{actionUser.UserName}\". Product Barcode: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
-                }
-                catch (Exception ex)
+                await ExecuteTransaction(async () =>
                 {
-                    LogService.CreateLog($"Product Barcode could not be inserted by \"{actionUser.UserName}\". Product Barcode: {JsonConvert.SerializeObject(data)} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
-                }
+                    var maxNumber = _context.ProductBarcodes.Max(x => (x.SerialNumber)) ?? 0;
+                    data.SerialNumber = maxNumber + 1;
+                    data.Code = data.SerialNumber.ToString().PadLeft(5, '0');
 
+                    try
+                    {
+                        _context.ProductBarcodes.Add(data);
+                        await _context.SaveChangesAsync();
+                        LogService.CreateLog($"Product Barcode  \"{data.Barcode}\" inserted by \"{actionUser.UserName}\". Product Barcode: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                    }
+                    catch (Exception ex)
+                    {
+                        LogService.CreateLog($"Product Barcode could not be inserted by \"{actionUser.UserName}\". Product Barcode: {JsonConvert.SerializeObject(data)} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                        throw;
+                    }
+                });
                 var dto = _mapper.Map<ProductBarcodeDto>(data);
 
                 return Ok(dto);

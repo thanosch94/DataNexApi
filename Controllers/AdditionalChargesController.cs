@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using System.Reflection.Metadata;
 
 namespace DataNexApi.Controllers
 {
@@ -17,7 +18,7 @@ namespace DataNexApi.Controllers
 
         private ApplicationDbContext _context;
         private IMapper _mapper;
-        public AdditionalChargesController(ApplicationDbContext context, IMapper mapper)
+        public AdditionalChargesController(ApplicationDbContext context, IMapper mapper) : base(context)
         {
             _context = context;
             _mapper = mapper;
@@ -39,20 +40,29 @@ namespace DataNexApi.Controllers
 
             var data = new AdditionalCharge();
             data.Name = additionalCharge.Name;
+            var source = await _context.AdditionalCharges.OrderByDescending(x => x.SerialNumber).FirstOrDefaultAsync();
 
-            try
+
+            await ExecuteTransaction(async () =>
             {
-                _context.AdditionalCharges.Add(data);
-                await _context.SaveChangesAsync();
-                LogService.CreateLog($"Additional Charge \"{data.Name}\" inserted by \"{actionUser.UserName}\"  Additional Charge: {JsonConvert.SerializeObject(data)}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                var maxNumber = _context.AdditionalCharges.Max(x => (x.SerialNumber)) ?? 0;
+                data.SerialNumber = maxNumber + 1;
+                data.Code = data.SerialNumber.ToString().PadLeft(5, '0');
+                try
+                {
+                    _context.AdditionalCharges.Add(data);
+                    await _context.SaveChangesAsync();
+                    LogService.CreateLog($"Additional Charge \"{data.Name}\" inserted by \"{actionUser.UserName}\"  Additional Charge: {JsonConvert.SerializeObject(data)}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
-            }
-            catch (Exception ex)
-            {
-                LogService.CreateLog($"Additional Charge \"{data.Name}\" could not be inserted by \"{actionUser.UserName}\"  Additional Charge: {JsonConvert.SerializeObject(data)} Error: {ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                }
+                catch (Exception ex)
+                {
+                    LogService.CreateLog($"Additional Charge \"{data.Name}\" could not be inserted by \"{actionUser.UserName}\"  Additional Charge: {JsonConvert.SerializeObject(data)} Error: {ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                    throw;
+                }
 
-            }
-
+            });
+            
             var dto = _mapper.Map<AdditionalChargeDto>(data);
 
             return Ok(dto);
@@ -105,6 +115,20 @@ namespace DataNexApi.Controllers
 
             }
             return Ok(data);
+        }
+
+        private int GetNextAdditionalChargeSerial()
+        {
+
+            var parameter = new Microsoft.Data.SqlClient.SqlParameter("@result", 8);
+
+            parameter.Direction = System.Data.ParameterDirection.Output;
+
+            _context.Database.ExecuteSqlRaw("set @result = NEXT VALUE FOR AdditionalChargeSerialNumbers", parameter);
+
+            var nextVal = (int)parameter.Value;
+
+            return nextVal;
         }
     }
 }
