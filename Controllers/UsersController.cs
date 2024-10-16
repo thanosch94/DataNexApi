@@ -16,6 +16,8 @@ namespace DataNexApi.Controllers
     {
         private ApplicationDbContext _context;
         private IMapper _mapper;
+        private static readonly object _lockObject = new object();
+
         public UsersController(ApplicationDbContext context, IMapper mapper):base(context)  
         {
             _context = context;
@@ -56,7 +58,7 @@ namespace DataNexApi.Controllers
                 data.PasswordHash = BCrypt.Net.BCrypt.EnhancedHashPassword(dto.Password);
                 data.UserAdded = actionUser.Id;
 
-                await ExecuteTransaction(async () =>
+                lock (_lockObject)
                 {
                     var maxNumber = _context.Users.Max(x => (x.SerialNumber)) ?? 0;
                     data.SerialNumber = maxNumber + 1;
@@ -65,7 +67,7 @@ namespace DataNexApi.Controllers
                     try
                     {
                         _context.Users.Add(data);
-                        await _context.SaveChangesAsync();
+                        _context.SaveChanges();
                         LogService.CreateLog($"User \"{data.Name}\" inserted by \"{actionUser.UserName}\". User: {data.Id}, {data.Name}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
                     }
@@ -74,7 +76,7 @@ namespace DataNexApi.Controllers
                         LogService.CreateLog($"User \"{data.Name}\" could not be inserted by \"{actionUser.UserName}\". User: {data.Id}, {data.Name} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
                         throw;
                     }
-                });
+                };
 
                 var dtoData = _mapper.Map<UserDto>(data);
 

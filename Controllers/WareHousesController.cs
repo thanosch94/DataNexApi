@@ -12,12 +12,14 @@ using Newtonsoft.Json;
 namespace DataNexApi.Controllers
 {
     [Authorize]
-    public class WareHousesController:BaseController
+    public class WareHousesController : BaseController
     {
 
         private ApplicationDbContext _context;
         private IMapper _mapper;
-        public WareHousesController(ApplicationDbContext context, IMapper mapper):base(context)
+        private static readonly object _lockObject = new object();
+
+        public WareHousesController(ApplicationDbContext context, IMapper mapper) : base(context)
         {
             _context = context;
             _mapper = mapper;
@@ -47,7 +49,7 @@ namespace DataNexApi.Controllers
                 data.IsDefault = wareHouse.IsDefault;
                 data.CompanyId = wareHouse.CompanyId;
 
-                await ExecuteTransaction(async () =>
+                lock (_lockObject)
                 {
                     var maxNumber = _context.WareHouses.Max(x => (x.SerialNumber)) ?? 0;
                     data.SerialNumber = maxNumber + 1;
@@ -56,7 +58,7 @@ namespace DataNexApi.Controllers
                     try
                     {
                         _context.WareHouses.Add(data);
-                        await _context.SaveChangesAsync();
+                        _context.SaveChanges();
                         LogService.CreateLog($"Warehouse \"{data.Name}\" inserted by \"{actionUser.UserName}\". Warehouse: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
                     }
@@ -65,7 +67,7 @@ namespace DataNexApi.Controllers
                         LogService.CreateLog($"Warehouse \"{data.Name}\" could not be inserted by \"{actionUser.UserName}\". Warehouse: {JsonConvert.SerializeObject(data)} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
                         throw;
                     }
-                });
+                };
 
                 return Ok(data);
             }

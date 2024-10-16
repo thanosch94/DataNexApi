@@ -25,6 +25,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     if (provider == "MsSQL")
     {
         options.UseSqlServer(builder.Configuration.GetConnectionString("DbConnection"), x => x.MigrationsAssembly("DataNex.Data"));
+        options.UseSqlServer(x => x.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
+        AppBase.ConnectionString =builder.Configuration.GetConnectionString("DbConnection");
     }
     else if (provider == "MySQL")
     {

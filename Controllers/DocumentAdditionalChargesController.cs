@@ -16,7 +16,9 @@ namespace DataNexApi.Controllers
     {
         private ApplicationDbContext _context;
         private IMapper _mapper;
-        public DocumentAdditionalChargesController(ApplicationDbContext context, IMapper mapper):base(context)
+        private static readonly object _lockObject = new object();
+
+        public DocumentAdditionalChargesController(ApplicationDbContext context, IMapper mapper)
         {
             _context = context;
             _mapper = mapper;
@@ -58,7 +60,7 @@ namespace DataNexApi.Controllers
             {
                 document.DocumentTotal += documentAdditionalCharge.AdditionalChargeAmount;
             }
-            await ExecuteTransaction(async () =>
+            lock (_lockObject)
             {
                 var maxNumber = _context.DocumentAdditionalCharges.Max(x => (x.SerialNumber)) ?? 0;
                 data.SerialNumber = maxNumber + 1;
@@ -67,7 +69,7 @@ namespace DataNexApi.Controllers
                 try
                 {
                     _context.DocumentAdditionalCharges.Add(data);
-                    await _context.SaveChangesAsync();
+                    _context.SaveChanges();
                     LogService.CreateLog($"Document Additional Charge inserted by \"{actionUser.UserName}\"  Document Additional Charge: {JsonConvert.SerializeObject(data)}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
                 }
@@ -76,7 +78,7 @@ namespace DataNexApi.Controllers
                     LogService.CreateLog($"Document Additional Charge could not be inserted by \"{actionUser.UserName}\" Document Additional Charge: {JsonConvert.SerializeObject(data)} Error: {ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
                     throw;
                 }
-            });
+            };
             var dto = _mapper.Map<DocumentAdditionalChargeDto>(data);
 
             return Ok(dto);

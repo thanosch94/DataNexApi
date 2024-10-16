@@ -18,6 +18,8 @@ namespace DataNexApi.Controllers
 
         private ApplicationDbContext _context;
         private IMapper _mapper;
+        private static readonly object _lockObject = new object();
+
         public AdditionalChargesController(ApplicationDbContext context, IMapper mapper) : base(context)
         {
             _context = context;
@@ -43,15 +45,16 @@ namespace DataNexApi.Controllers
             var source = await _context.AdditionalCharges.OrderByDescending(x => x.SerialNumber).FirstOrDefaultAsync();
 
 
-            await ExecuteTransaction(async () =>
+            lock (_lockObject)
             {
+
                 var maxNumber = _context.AdditionalCharges.Max(x => (x.SerialNumber)) ?? 0;
                 data.SerialNumber = maxNumber + 1;
                 data.Code = data.SerialNumber.ToString().PadLeft(5, '0');
                 try
                 {
                     _context.AdditionalCharges.Add(data);
-                    await _context.SaveChangesAsync();
+                    _context.SaveChanges();
                     LogService.CreateLog($"Additional Charge \"{data.Name}\" inserted by \"{actionUser.UserName}\"  Additional Charge: {JsonConvert.SerializeObject(data)}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
                 }
@@ -61,8 +64,8 @@ namespace DataNexApi.Controllers
                     throw;
                 }
 
-            });
-            
+            }
+
             var dto = _mapper.Map<AdditionalChargeDto>(data);
 
             return Ok(dto);

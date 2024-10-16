@@ -14,6 +14,8 @@ namespace DataNexApi.Controllers
     {
         private ApplicationDbContext _context;
         private IMapper _mapper;
+        private static readonly object _lockObject = new object();
+
         public VatClassesController(ApplicationDbContext context, IMapper mapper):base(context)
         {
             _context = context;
@@ -53,7 +55,7 @@ namespace DataNexApi.Controllers
                 data.Rate = dto.Rate;
                 data.UserAdded = actionUser.Id;
 
-                await ExecuteTransaction(async () =>
+                lock (_lockObject)
                 {
                     var maxNumber = _context.VatClasses.Max(x => (x.SerialNumber)) ?? 0;
                     data.SerialNumber = maxNumber + 1;
@@ -62,7 +64,7 @@ namespace DataNexApi.Controllers
                     try
                     {
                         _context.VatClasses.Add(data);
-                        await _context.SaveChangesAsync();
+                        _context.SaveChanges();
                         LogService.CreateLog($"Vat Class \"{data.Name}\" inserted by \"{actionUser.UserName}\". Vat Class: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
                     }
@@ -71,7 +73,7 @@ namespace DataNexApi.Controllers
                         LogService.CreateLog($"Vat Class \"{data.Name}\" could not be inserted by \"{actionUser.UserName}\". Vat Class: {JsonConvert.SerializeObject(data)} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
                         throw;
                     }
-                });
+                };
 
                 return Ok(data);
             }

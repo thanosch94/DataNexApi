@@ -18,6 +18,8 @@ namespace DataNexApi.Controllers
     {
         private ApplicationDbContext _context;
         private IMapper _mapper;
+        private static readonly object _lockObject = new object();
+
         public BrandsController(ApplicationDbContext context, IMapper mapper):base(context)
         {
             _context = context;
@@ -64,7 +66,7 @@ namespace DataNexApi.Controllers
 
             data.Name = brand.Name;
             data.UserAdded = actionUser.Id;
-            await ExecuteTransaction(async() =>
+            lock (_lockObject)
             {
                 var maxNumber = _context.Brands.Max(x => (x.SerialNumber)) ?? 0;
                 data.SerialNumber = maxNumber+1;
@@ -73,7 +75,7 @@ namespace DataNexApi.Controllers
                 try
                 {
                     _context.Brands.Add(data);
-                    await _context.SaveChangesAsync();
+                    _context.SaveChanges();
                     LogService.CreateLog($"Brand \"{data.Name}\" inserted by \"{actionUser.UserName}\"  Brand: {JsonConvert.SerializeObject(data)}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
                 }
@@ -83,7 +85,7 @@ namespace DataNexApi.Controllers
                     throw;
                 }
 
-            });
+            };
 
             var dto = _mapper.Map<BrandDto>(data);
 

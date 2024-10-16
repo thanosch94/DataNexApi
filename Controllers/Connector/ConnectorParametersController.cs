@@ -17,6 +17,7 @@ namespace DataNexApi.Controllers.Connector
     {
         private ApplicationDbContext _context;
         private IMapper _mapper;
+        private static readonly object _lockObject = new object();
 
         public ConnectorParametersController(ApplicationDbContext context, IMapper mapper):base(context) 
         {
@@ -43,7 +44,7 @@ namespace DataNexApi.Controllers.Connector
             data.WooConsumerKey = connectorParameters.WooConsumerKey;
             data.WooConsumerSecret = connectorParameters.WooConsumerSecret;
 
-            await ExecuteTransaction(async () =>
+            lock (_lockObject)
             {
                 var maxNumber = _context.ConnectorParameters.Max(x => (x.SerialNumber)) ?? 0;
                 data.SerialNumber = maxNumber + 1;
@@ -52,7 +53,7 @@ namespace DataNexApi.Controllers.Connector
                 try
                 {
                     _context.ConnectorParameters.Add(data);
-                    await _context.SaveChangesAsync();
+                    _context.SaveChanges();
                     LogService.CreateLog($"Connector parameters inserted by \"{actionUser.UserName}\"  Connector Parameters: {JsonConvert.SerializeObject(data)}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
                 }
@@ -61,7 +62,7 @@ namespace DataNexApi.Controllers.Connector
                     LogService.CreateLog($"Connector parameters could not be inserted by \"{actionUser.UserName}\"  Connector Parameters: {JsonConvert.SerializeObject(data)} Error: {ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
                     throw;
                 }
-            });
+            };
 
 
             var dto = _mapper.Map<ConnectorParametersDto>(data);

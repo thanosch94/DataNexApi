@@ -17,6 +17,8 @@ namespace DataNexApi.Controllers
     {
         private ApplicationDbContext _context;
         private IMapper _mapper;
+        private static readonly object _lockObject = new object();
+
         public CustomersController(ApplicationDbContext context, IMapper mapper) : base(context)
         {
             _context = context;
@@ -82,7 +84,7 @@ namespace DataNexApi.Controllers
             data.TaxOffice = customer.TaxOffice;
             data.UserAdded = actionUser.Id;
 
-            await ExecuteTransaction(async() =>
+            lock (_lockObject)
             {
                 try
                 {
@@ -91,7 +93,7 @@ namespace DataNexApi.Controllers
                     data.Code = data.SerialNumber.ToString().PadLeft(5, '0');
 
                     _context.Customers.Add(data);
-                    await _context.SaveChangesAsync();
+                    _context.SaveChanges();
                     LogService.CreateLog($"Customer \"{data.Name}\" inserted by \"{actionUser.UserName}\". Customer: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
                 }
@@ -101,7 +103,7 @@ namespace DataNexApi.Controllers
                     throw;
                 }
 
-            });
+            };
             
 
             var dto = _mapper.Map<CustomerDto>(data);

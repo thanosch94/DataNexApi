@@ -17,6 +17,7 @@ namespace DataNexApi.Controllers.Connector
     {
         private ApplicationDbContext _context;
         private IMapper _mapper;
+        private static readonly object _lockObject = new object();
 
         public WooConnectionsController(ApplicationDbContext context, IMapper mapper)
         {
@@ -43,7 +44,7 @@ namespace DataNexApi.Controllers.Connector
             data.Endpoint = wooConnectionsDataDto.Endpoint;
             data.WooEntity = wooConnectionsDataDto.WooEntity;
 
-            await ExecuteTransaction(async () =>
+            lock (_lockObject)
             {
                 var maxNumber = _context.WooConnectionsData.Max(x => (x.SerialNumber)) ?? 0;
                 data.SerialNumber = maxNumber + 1;
@@ -52,7 +53,7 @@ namespace DataNexApi.Controllers.Connector
                 try
                 {
                     _context.WooConnectionsData.Add(data);
-                    await _context.SaveChangesAsync();
+                    _context.SaveChanges();
                     LogService.CreateLog($"Woo Connection data inserted by \"{actionUser.UserName}\"  Data: {JsonConvert.SerializeObject(data)}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
                 }
@@ -61,7 +62,7 @@ namespace DataNexApi.Controllers.Connector
                     LogService.CreateLog($"Woo Connection data could not be inserted by \"{actionUser.UserName}\"  Data: {JsonConvert.SerializeObject(data)} Error: {ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
                 }
-            });
+            };
 
 
             var dto = _mapper.Map<WooConnectionsDataDto>(data);

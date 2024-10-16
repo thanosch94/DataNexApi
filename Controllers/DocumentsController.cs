@@ -12,11 +12,13 @@ using Newtonsoft.Json;
 namespace DataNexApi.Controllers
 {
     [Authorize]
-    public class DocumentsController:BaseController
+    public class DocumentsController : BaseController
     {
         private ApplicationDbContext _context;
         private IMapper _mapper;
-        public DocumentsController(ApplicationDbContext context, IMapper mapper):base(context)
+        private static readonly object _lockObject = new object();
+
+        public DocumentsController(ApplicationDbContext context, IMapper mapper) : base(context)
         {
             _context = context;
             _mapper = mapper;
@@ -25,7 +27,7 @@ namespace DataNexApi.Controllers
         [HttpGet("getall")]
         public async Task<IActionResult> GetAll()
         {
-            var data = await _context.Documents.Include(x => x.Customer).Include(x => x.DocumentType).OrderByDescending(x=>x.DocumentNumber).Select(x => new DocumentDto()
+            var data = await _context.Documents.Include(x => x.Customer).Include(x => x.DocumentType).OrderByDescending(x => x.DocumentNumber).Select(x => new DocumentDto()
             {
                 Id = x.Id,
                 Code = x.Code,
@@ -34,7 +36,7 @@ namespace DataNexApi.Controllers
                 DocumentTypeId = x.DocumentTypeId,
                 DocumentTypeName = x.DocumentType.Name,
                 DocumentNumber = x.DocumentNumber,
-                DocumentCode = x.DocumentType.Abbreviation +'-'+ x.DocumentNumber.ToString().PadLeft(6,'0'),
+                DocumentCode = x.DocumentType.Abbreviation + '-' + x.DocumentNumber.ToString().PadLeft(6, '0'),
                 DocumentStatusId = x.DocumentStatusId,
                 CustomerId = x.CustomerId,
                 CustomerName = x.Customer.Name,
@@ -68,43 +70,43 @@ namespace DataNexApi.Controllers
         [HttpGet("getbyid/{id}")]
         public async Task<IActionResult> GetById(Guid id)
         {
-            var data = await _context.Documents.Include(x => x.DocumentStatus).Include(x=>x.Customer).Include(x=>x.DocumentType).Where(x => x.Id == id).Select(x=>new DocumentDto()
+            var data = await _context.Documents.Include(x => x.DocumentStatus).Include(x => x.Customer).Include(x => x.DocumentType).Where(x => x.Id == id).Select(x => new DocumentDto()
             {
                 Id = x.Id,
                 Code = x.Code,
                 SerialNumber = x.SerialNumber,
                 DocumentDateTime = x.DocumentDateTime,
                 DocumentTypeId = x.DocumentTypeId,
-                DocumentCode  = x.DocumentCode,
+                DocumentCode = x.DocumentCode,
                 DocumentTypeName = x.DocumentType.Abbreviation,
                 DocumentNumber = x.DocumentNumber,
                 DocumentStatusId = x.DocumentStatusId,
                 DocumentStatusName = x.DocumentStatus.Name,
-                CustomerId =  x.CustomerId,
+                CustomerId = x.CustomerId,
                 SupplierId = x.SupplierId,
                 CustomerName = x.Customer.Name,
-                CustomerPhone1 =x.Customer.Phone1,
+                CustomerPhone1 = x.Customer.Phone1,
                 DocumentTotal = x.DocumentTotal,
                 ShippingAddress = x.ShippingAddress,
-                ShippingRegion =x.ShippingRegion,
-                ShippingPostalCode =x.ShippingPostalCode,
-                ShippingCity =x.ShippingCity,
+                ShippingRegion = x.ShippingRegion,
+                ShippingPostalCode = x.ShippingPostalCode,
+                ShippingCity = x.ShippingCity,
                 ShippingCountry = x.ShippingCountry,
-                ShippingPhone1 =x.ShippingPhone1,
-                ShippingPhone2 =x.ShippingPhone2,
+                ShippingPhone1 = x.ShippingPhone1,
+                ShippingPhone2 = x.ShippingPhone2,
                 ShippingEmail = x.ShippingEmail,
-                UserText1 =x.UserText1,
-                UserText2 =x.UserText2,
-                UserText3 =x.UserText3,
-                UserText4 =x.UserText4,
-                UserNumber1 =x.UserNumber1,
-                UserNumber2 =x.UserNumber2,
-                UserNumber3 =x.UserNumber3,
-                UserNumber4 =x.UserNumber4,
-                UserDate1 =x.UserDate1,
-                UserDate2 =x.UserDate2,
-                UserDate3 =x.UserDate3,
-                UserDate4 =x.UserDate4,
+                UserText1 = x.UserText1,
+                UserText2 = x.UserText2,
+                UserText3 = x.UserText3,
+                UserText4 = x.UserText4,
+                UserNumber1 = x.UserNumber1,
+                UserNumber2 = x.UserNumber2,
+                UserNumber3 = x.UserNumber3,
+                UserNumber4 = x.UserNumber4,
+                UserDate1 = x.UserDate1,
+                UserDate2 = x.UserDate2,
+                UserDate3 = x.UserDate3,
+                UserDate4 = x.UserDate4,
 
             }).FirstOrDefaultAsync();
 
@@ -167,8 +169,8 @@ namespace DataNexApi.Controllers
             data.Id = document.Id;
             data.DocumentTypeId = document.DocumentTypeId;
             data.DocumentDateTime = document.DocumentDateTime;
-            var source = await _context.Documents.Where(x=>x.DocumentTypeId== document.DocumentTypeId).OrderByDescending(x=>x.DocumentNumber).FirstOrDefaultAsync();
-            if (source!=null)
+            var source = await _context.Documents.Where(x => x.DocumentTypeId == document.DocumentTypeId).OrderByDescending(x => x.DocumentNumber).FirstOrDefaultAsync();
+            if (source != null)
             {
                 data.DocumentNumber = source.DocumentNumber + 1;
             }
@@ -178,9 +180,9 @@ namespace DataNexApi.Controllers
             }
 
             var documentType = await _context.DocumentTypes.FirstOrDefaultAsync(x => x.Id == document.DocumentTypeId);
-            if (documentType!=null)
+            if (documentType != null)
             {
-                data.DocumentCode = documentType.Abbreviation +"-"+ data.DocumentNumber.ToString().PadLeft(6,'0');
+                data.DocumentCode = documentType.Abbreviation + "-" + data.DocumentNumber.ToString().PadLeft(6, '0');
 
             }
             data.CustomerId = document.CustomerId;
@@ -209,8 +211,10 @@ namespace DataNexApi.Controllers
             data.UserDate4 = document.UserDate4;
             data.UserAdded = actionUser.Id;
 
-            await ExecuteTransaction(async () =>
+
+            lock (_lockObject)
             {
+
                 var maxNumber = _context.Documents.Max(x => (x.SerialNumber)) ?? 0;
                 data.SerialNumber = maxNumber + 1;
                 data.Code = data.SerialNumber.ToString().PadLeft(6, '0');
@@ -218,23 +222,23 @@ namespace DataNexApi.Controllers
                 try
                 {
                     _context.Documents.Add(data);
-                    await _context.SaveChangesAsync();
-                    LogService.CreateLog($"New document inserted by \"{actionUser.UserName}\". Document: {JsonConvert.SerializeObject(data, new JsonSerializerSettings()
+                    _context.SaveChanges();
+                    LogMessage($"New document inserted by \"{actionUser.UserName}\". Document: {JsonConvert.SerializeObject(data, new JsonSerializerSettings()
                     {
                         ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
-                    })}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                    })}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id);
                 }
                 catch (Exception ex)
                 {
-                    LogService.CreateLog($"Document could not be inserted by \"{actionUser.UserName}\". Document: {JsonConvert.SerializeObject(data, new JsonSerializerSettings()
+                    LogMessage($"Document could not be inserted by \"{actionUser.UserName}\". Document: {JsonConvert.SerializeObject(data, new JsonSerializerSettings()
                     {
                         ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
-                    })} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                    })} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id);
                     throw;
                 }
-            });
-            
 
+
+            }
 
             var dto = _mapper.Map<DocumentDto>(data);
             dto.DocumentTypeName = documentType.Name;
@@ -244,7 +248,8 @@ namespace DataNexApi.Controllers
                 var customer = await _context.Customers.Where(x => x.Id == dto.CustomerId).FirstOrDefaultAsync();
                 dto.CustomerPhone1 = customer.Phone1;
 
-            }else if(dto.SupplierId != null) 
+            }
+            else if (dto.SupplierId != null)
             {
                 ////
             }
@@ -263,7 +268,7 @@ namespace DataNexApi.Controllers
 
             data.DocumentTypeId = document.DocumentTypeId;
             var source = await _context.Documents.Where(x => x.DocumentTypeId == document.DocumentTypeId).OrderByDescending(x => x.DocumentNumber).FirstOrDefaultAsync();
-           
+
             data.CustomerId = document.CustomerId;
             data.SupplierId = document.SupplierId;
             data.DocumentDateTime = document.DocumentDateTime;
@@ -300,17 +305,17 @@ namespace DataNexApi.Controllers
             try
             {
                 await _context.SaveChangesAsync();
-                LogService.CreateLog($"Document updated by \"{actionUser.UserName}\". Document: {JsonConvert.SerializeObject(data, new JsonSerializerSettings()
+                LogMessage($"Document updated by \"{actionUser.UserName}\". Document: {JsonConvert.SerializeObject(data, new JsonSerializerSettings()
                 {
                     ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
-                })}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                })}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id);
             }
             catch (Exception ex)
             {
-                LogService.CreateLog($"Document could not be updated by \"{actionUser.UserName}\". Document: {JsonConvert.SerializeObject(data, new JsonSerializerSettings()
+                LogMessage($"Document could not be updated by \"{actionUser.UserName}\". Document: {JsonConvert.SerializeObject(data, new JsonSerializerSettings()
                 {
                     ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
-                })} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                })} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id);
 
             }
 
@@ -326,28 +331,28 @@ namespace DataNexApi.Controllers
 
             var data = await _context.Documents.FirstOrDefaultAsync(x => x.Id == id);
 
-            var documentAdditionalCharges = await _context.DocumentAdditionalCharges.Where(x=> x.DocumentId == id).ToListAsync();
+            var documentAdditionalCharges = await _context.DocumentAdditionalCharges.Where(x => x.DocumentId == id).ToListAsync();
             try
             {
-                if(documentAdditionalCharges != null)
+                if (documentAdditionalCharges != null)
                 {
                     _context.DocumentAdditionalCharges.RemoveRange(documentAdditionalCharges);
 
                 }
                 _context.Documents.Remove(data);
                 await _context.SaveChangesAsync();
-                LogService.CreateLog($"Document deleted by \"{actionUser.UserName}\"  Document: {JsonConvert.SerializeObject(data, new JsonSerializerSettings()
+                LogMessage($"Document deleted by \"{actionUser.UserName}\"  Document: {JsonConvert.SerializeObject(data, new JsonSerializerSettings()
                 {
                     ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
-                })}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                })}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id);
 
             }
             catch (Exception ex)
             {
-                LogService.CreateLog($"Document could not be deleted by \"{actionUser.UserName}\"  Document: {JsonConvert.SerializeObject(data, new JsonSerializerSettings()
+                LogMessage($"Document could not be deleted by \"{actionUser.UserName}\"  Document: {JsonConvert.SerializeObject(data, new JsonSerializerSettings()
                 {
                     ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
-                })} Error:{ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                })} Error:{ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id);
 
             }
             return Ok(data);
@@ -360,8 +365,8 @@ namespace DataNexApi.Controllers
             {
                 SupplierId = x.Id,
                 SupplierName = x.Name,
-                PayableTotal = x.Documents.Where(x => x.DocumentType.DocumentTypeGroup == DocumentTypeGroupEnum.Purchasing &&x.DocumentType.PersonBalanceAffectBehavior == DocTypeAffectBehaviorEnum.Increase).Select(x => x.DocumentTotal).Sum() - x.Documents.Where(x => x.DocumentType.DocumentTypeGroup == DocumentTypeGroupEnum.Purchasing && x.DocumentType.PersonBalanceAffectBehavior == DocTypeAffectBehaviorEnum.Decrease).Select(x => x.DocumentTotal).Sum(),
-            }).OrderByDescending(x=>x.PayableTotal).ToListAsync();
+                PayableTotal = x.Documents.Where(x => x.DocumentType.DocumentTypeGroup == DocumentTypeGroupEnum.Purchasing && x.DocumentType.PersonBalanceAffectBehavior == DocTypeAffectBehaviorEnum.Increase).Select(x => x.DocumentTotal).Sum() - x.Documents.Where(x => x.DocumentType.DocumentTypeGroup == DocumentTypeGroupEnum.Purchasing && x.DocumentType.PersonBalanceAffectBehavior == DocTypeAffectBehaviorEnum.Decrease).Select(x => x.DocumentTotal).Sum(),
+            }).OrderByDescending(x => x.PayableTotal).ToListAsync();
 
             return Ok(data);
         }
@@ -370,7 +375,7 @@ namespace DataNexApi.Controllers
         [HttpGet("getChargeableDocumentsBySupplierId/{id}")]
         public async Task<IActionResult> GetChargeableDocumentsBySupplierId(Guid id)
         {
-            var documents = await _context.Suppliers.Where(x=>x.Id==id).Select(x => x.Documents).FirstOrDefaultAsync();
+            var documents = await _context.Suppliers.Where(x => x.Id == id).Select(x => x.Documents).FirstOrDefaultAsync();
 
             if (documents != null)
             {
@@ -393,7 +398,7 @@ namespace DataNexApi.Controllers
                     }
                 }
             }
-           
+
             return Ok(documents);
         }
 
@@ -423,7 +428,7 @@ namespace DataNexApi.Controllers
                         .Where(x => x.Id == document.DocumentTypeId)
                         .Select(x => new DocumentTypeDto()
                         {
-                            Name=x.Name,
+                            Name = x.Name,
                             PersonBalanceAffectBehavior = x.PersonBalanceAffectBehavior
                         })
                         .FirstOrDefaultAsync();
@@ -437,7 +442,7 @@ namespace DataNexApi.Controllers
                     }
                 }
             }
-            
+
             return Ok(documents);
         }
     }

@@ -20,6 +20,7 @@ namespace DataNexApi.Controllers.Connector
     {
         private ApplicationDbContext _context;
         private IMapper _mapper;
+        private static readonly object _lockObject = new object();
 
         public ConnectorJobsController(ApplicationDbContext context, IMapper mapper):base(context)
         {
@@ -108,7 +109,7 @@ namespace DataNexApi.Controllers.Connector
             data.JobType = connectorJobDto.JobType;
             data.DataSourceId = connectorJobDto.DataSourceId;
             data.WooConnectionDataSourceId = connectorJobDto.WooConnectionDataSourceId;
-            await ExecuteTransaction(async () =>
+            lock (_lockObject)
             {
                 var maxNumber = _context.ConnectorJobs.Max(x => (x.SerialNumber)) ?? 0;
                 data.SerialNumber = maxNumber + 1;
@@ -117,7 +118,7 @@ namespace DataNexApi.Controllers.Connector
                 try
                 {
                     _context.ConnectorJobs.Add(data);
-                    await _context.SaveChangesAsync();
+                    _context.SaveChanges();
                     LogService.CreateLog($"Connector job inserted by \"{actionUser.UserName}\"  Connector Job: {JsonConvert.SerializeObject(data)}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
                 }
@@ -126,7 +127,7 @@ namespace DataNexApi.Controllers.Connector
                     LogService.CreateLog($"Connector Job could not be inserted by \"{actionUser.UserName}\"  Connector Job: {JsonConvert.SerializeObject(data)} Error: {ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
                     throw;
                 }
-            });
+            };
 
             var dto = _mapper.Map<ConnectorJobDto>(data);
 

@@ -1,5 +1,7 @@
 ﻿using DataNex.Data;
+using DataNex.Model.Enums;
 using DataNex.Model.Models;
+using DataNexApi.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
@@ -11,6 +13,7 @@ namespace DataNexApi.Controllers
 
     public class BaseController : Controller
     {
+
         private ApplicationDbContext _context;
         public BaseController(ApplicationDbContext context)
         {
@@ -32,8 +35,9 @@ namespace DataNexApi.Controllers
         }
         protected async Task ExecuteTransaction(Action action)
         {
-            using (var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable))
-            {
+
+            var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+            
                 try
                 {
                     action();
@@ -44,7 +48,15 @@ namespace DataNexApi.Controllers
                     await transaction.RollbackAsync();
                     throw;
                 }
-            }
+         
+            
+        }
+        protected void LogMessage(string message, LogTypeEnum logType, LogOriginEnum logOrigin, Guid? userId)
+        {
+           
+                LogService.CreateLog(message, logType,logOrigin, userId, _context);
+            
+
         }
     }
 }

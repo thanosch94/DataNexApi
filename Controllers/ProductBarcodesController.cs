@@ -16,6 +16,8 @@ namespace DataNexApi.Controllers
     {
         private ApplicationDbContext _context;
         private IMapper _mapper;
+        private static readonly object _lockObject = new object();
+
         public ProductBarcodesController(ApplicationDbContext context, IMapper mapper):base(context)
         {
             _context = context;
@@ -126,7 +128,7 @@ namespace DataNexApi.Controllers
             else
             {
 
-                await ExecuteTransaction(async () =>
+                lock (_lockObject)
                 {
                     var maxNumber = _context.ProductBarcodes.Max(x => (x.SerialNumber)) ?? 0;
                     data.SerialNumber = maxNumber + 1;
@@ -135,7 +137,7 @@ namespace DataNexApi.Controllers
                     try
                     {
                         _context.ProductBarcodes.Add(data);
-                        await _context.SaveChangesAsync();
+                        _context.SaveChanges();
                         LogService.CreateLog($"Product Barcode  \"{data.Barcode}\" inserted by \"{actionUser.UserName}\". Product Barcode: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
                     }
                     catch (Exception ex)
@@ -143,7 +145,7 @@ namespace DataNexApi.Controllers
                         LogService.CreateLog($"Product Barcode could not be inserted by \"{actionUser.UserName}\". Product Barcode: {JsonConvert.SerializeObject(data)} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
                         throw;
                     }
-                });
+                };
                 var dto = _mapper.Map<ProductBarcodeDto>(data);
 
                 return Ok(dto);
