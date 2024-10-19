@@ -20,6 +20,8 @@ namespace DataNexApi.Controllers
         [HttpGet("getall")]
         public async Task<IActionResult> GetAll()
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var data = await _context.Logs.Select(x=> new LogDto()
             {
                 Id = x.Id,
@@ -30,7 +32,7 @@ namespace DataNexApi.Controllers
                 LogOriginName = x.LogOrigin.GetDisplayName()
                 
 
-            }).ToListAsync();
+            }).Where(x=>x.CompanyId==companyId).ToListAsync();
 
             return Ok(data.OrderByDescending(x => x.DateAdded));
         }

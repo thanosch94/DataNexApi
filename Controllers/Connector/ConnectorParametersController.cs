@@ -28,8 +28,9 @@ namespace DataNexApi.Controllers.Connector
         [HttpGet("getall")]
         public async Task<IActionResult> GetAll()
         {
-            //TODO change to toListAsync when company functionality is added
-            var data = await _context.ConnectorParameters.FirstOrDefaultAsync();
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.ConnectorParameters.FirstOrDefaultAsync(x=>x.CompanyId == companyId);
 
             return Ok(data);
         }
@@ -37,16 +38,19 @@ namespace DataNexApi.Controllers.Connector
         [HttpPost("insertdto")]
         public async Task<IActionResult> InsertDto([FromBody] ConnectorParametersDto connectorParameters)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
             var data = new ConnectorParameters();
             data.WooBaseUrl = connectorParameters.WooBaseUrl;
             data.WooConsumerKey = connectorParameters.WooConsumerKey;
             data.WooConsumerSecret = connectorParameters.WooConsumerSecret;
+            data.CompanyId= companyId;
 
             lock (_lockObject)
             {
-                var maxNumber = _context.ConnectorParameters.Max(x => (x.SerialNumber)) ?? 0;
+                var maxNumber = _context.ConnectorParameters.Where(x => x.CompanyId == companyId).Max(x => (x.SerialNumber)) ?? 0;
                 data.SerialNumber = maxNumber + 1;
                 data.Code = data.SerialNumber.ToString().PadLeft(5, '0');
 
@@ -73,15 +77,18 @@ namespace DataNexApi.Controllers.Connector
         [HttpPut("updatedto")]
         public async Task<IActionResult> UpdateDto([FromBody] ConnectorParametersDto connectorParameters)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
-            var data = await _context.ConnectorParameters.FirstOrDefaultAsync(x => x.Id == connectorParameters.Id);
+            var data = await _context.ConnectorParameters.FirstOrDefaultAsync(x => x.Id == connectorParameters.Id && x.CompanyId == companyId);
 
             data.WooBaseUrl = connectorParameters.WooBaseUrl;
             data.WooConsumerKey = connectorParameters.WooConsumerKey;
             data.WooConsumerSecret = connectorParameters.WooConsumerSecret;
             data.UserUpdated = actionUser.Id;
             data.DateUpdated = DateTime.Now;
+            data.CompanyId = companyId;
 
             try
             {
@@ -103,9 +110,11 @@ namespace DataNexApi.Controllers.Connector
         [HttpDelete("deletebyid/{id}")]
         public async Task<IActionResult> DeleteById(Guid id)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
-            var data = await _context.ConnectorParameters.FirstOrDefaultAsync(x => x.Id == id);
+            var data = await _context.ConnectorParameters.FirstOrDefaultAsync(x => x.Id == id && x.CompanyId ==companyId);
 
             try
             {

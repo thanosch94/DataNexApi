@@ -25,7 +25,23 @@ namespace DataNexApi.Controllers
         [HttpGet("getall")]
         public async Task<IActionResult> GetAll()
         {
-            var data = await _context.VatClasses.ToListAsync();
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.VatClasses.Where(x=>x.CompanyId==companyId).ToListAsync();
+
+            return Ok(data);
+        }               
+        
+        [HttpGet("getlookup")]
+        public async Task<IActionResult> GetLookup()
+        {
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.VatClasses.Where(x => x.CompanyId == companyId).Select(x=>new VatClassDto()
+            {
+                Id=x.Id,
+                Name=x.Name,
+            }).ToListAsync();
 
             return Ok(data);
         }        
@@ -33,7 +49,9 @@ namespace DataNexApi.Controllers
         [HttpGet("getbyid/{id}")]
         public async Task<IActionResult> GetById(Guid id)
         {
-            var data = await _context.VatClasses.FirstOrDefaultAsync(x=>x.Id ==id);
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.VatClasses.FirstOrDefaultAsync(x=>x.Id ==id && x.CompanyId==companyId);
             var dto = _mapper.Map<VatClassDto>(data);
 
             return Ok(dto);
@@ -42,11 +60,13 @@ namespace DataNexApi.Controllers
         [HttpPost("insertdto")]
         public async Task<IActionResult> InsertDto([FromBody] VatClassDto dto)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
             var data = new VatClass();
 
-            var exists = await _context.VatClasses.Where(x => x.Name == dto.Name).FirstOrDefaultAsync();
+            var exists = await _context.VatClasses.Where(x => x.Name == dto.Name && x.CompanyId==companyId).FirstOrDefaultAsync();
             if (exists == null)
             {
                 data.Name = dto.Name;
@@ -54,10 +74,11 @@ namespace DataNexApi.Controllers
                 data.Abbreviation = dto.Abbreviation;   
                 data.Rate = dto.Rate;
                 data.UserAdded = actionUser.Id;
+                data.CompanyId = companyId;
 
                 lock (_lockObject)
                 {
-                    var maxNumber = _context.VatClasses.Max(x => (x.SerialNumber)) ?? 0;
+                    var maxNumber = _context.VatClasses.Where(x => x.CompanyId == companyId).Max(x => (x.SerialNumber)) ?? 0;
                     data.SerialNumber = maxNumber + 1;
                     data.Code = data.SerialNumber.ToString().PadLeft(5, '0');
 
@@ -87,15 +108,18 @@ namespace DataNexApi.Controllers
         [HttpPut("updatedto")]
         public async Task<IActionResult> UpdateDto([FromBody] VatClassDto dto)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
-            var data = await _context.VatClasses.Where(x => x.Id == dto.Id).FirstOrDefaultAsync();
+            var data = await _context.VatClasses.Where(x => x.Id == dto.Id &&x.CompanyId==companyId).FirstOrDefaultAsync();
 
             data.Name = dto.Name;
             data.Description = dto.Description;
             data.Abbreviation = dto.Abbreviation;
             data.Rate = dto.Rate;
             data.IsActive = dto.IsActive;
+            data.CompanyId = companyId;
 
             try
             {
@@ -118,9 +142,11 @@ namespace DataNexApi.Controllers
         [HttpDelete("deletebyid/{id}")]
         public async Task<IActionResult> DeleteById(Guid id)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
-            var data = await _context.VatClasses.FirstOrDefaultAsync(x => x.Id == id);
+            var data = await _context.VatClasses.FirstOrDefaultAsync(x => x.Id == id && x.CompanyId==companyId);
 
             _context.VatClasses.Remove(data);
 

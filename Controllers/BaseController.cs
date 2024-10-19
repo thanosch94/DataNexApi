@@ -25,7 +25,24 @@ namespace DataNexApi.Controllers
 
         }
 
-        public async Task<User> GetActionUser()
+        public Guid GetCompanyFromHeader()
+        {
+            if (Request.Headers.TryGetValue("CompanyId", out var id))
+            {
+                // Use the header value here
+                //var company = new { Header = companyId.ToString() };
+                var companyId = id.ToString();
+                return Guid.Parse(companyId);
+            }
+            else
+            {
+                return Guid.Empty;
+            }
+
+        }
+
+     
+    public async Task<User> GetActionUser()
         {
             string userData = User.Claims.FirstOrDefault().Value;
             var actionUser = new User();
@@ -33,24 +50,7 @@ namespace DataNexApi.Controllers
 
             return actionUser;
         }
-        protected async Task ExecuteTransaction(Action action)
-        {
 
-            var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
-            
-                try
-                {
-                    action();
-                    await transaction.CommitAsync();
-                }
-                catch
-                {
-                    await transaction.RollbackAsync();
-                    throw;
-                }
-         
-            
-        }
         protected void LogMessage(string message, LogTypeEnum logType, LogOriginEnum logOrigin, Guid? userId)
         {
            

@@ -32,7 +32,9 @@ namespace DataNexApi.Controllers.Connector
         [HttpGet("getall")]
         public async Task<IActionResult> GetAll()
         {
-            var data = await _context.ConnectorJobs.ToListAsync();
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.ConnectorJobs.Where(x => x.CompanyId == companyId).ToListAsync();
 
             return Ok(data);
 
@@ -42,7 +44,9 @@ namespace DataNexApi.Controllers.Connector
         [HttpGet("getbyid/{id}")]
         public async Task<IActionResult> GetById(Guid id)
         {
-            var data = await _context.ConnectorJobs.Where(x => x.Id == id).Select(x => new ConnectorJobDto()
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.ConnectorJobs.Where(x => x.Id == id && x.CompanyId == companyId).Select(x => new ConnectorJobDto()
             {
                 Id = x.Id,
                 SerialNumber = x.SerialNumber,
@@ -62,7 +66,9 @@ namespace DataNexApi.Controllers.Connector
         [HttpGet("getallbyjobtype/{jobType}")]
         public async Task<IActionResult> GetAllByDataSourceId(ConnectorJobTypeEnum jobType)
         {
-            var data = await _context.ConnectorJobs.Where(x => x.JobType == jobType).Select(x => new ConnectorJobDto()
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.ConnectorJobs.Where(x => x.JobType == jobType && x.CompanyId == companyId).Select(x => new ConnectorJobDto()
             {
                 Id = x.Id,
                 SerialNumber = x.SerialNumber,
@@ -81,7 +87,9 @@ namespace DataNexApi.Controllers.Connector
         [HttpGet("getallbydatasourceid/{id}")]
         public async Task<IActionResult> GetAllByDataSourceId(Guid id)
         {
-            var data = await _context.ConnectorJobs.Where(x => x.DataSourceId == id).Select(x => new ConnectorJobDto()
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.ConnectorJobs.Where(x => x.DataSourceId == id && x.CompanyId==companyId).Select(x => new ConnectorJobDto()
             {
                 Id = x.Id,
                 SerialNumber = x.SerialNumber,
@@ -100,6 +108,8 @@ namespace DataNexApi.Controllers.Connector
         [HttpPost("insertdto")]
         public async Task<IActionResult> InsertDto([FromBody] ConnectorJobDto connectorJobDto)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
             var data = new ConnectorJob();
@@ -109,9 +119,10 @@ namespace DataNexApi.Controllers.Connector
             data.JobType = connectorJobDto.JobType;
             data.DataSourceId = connectorJobDto.DataSourceId;
             data.WooConnectionDataSourceId = connectorJobDto.WooConnectionDataSourceId;
+            data.CompanyId = companyId;
             lock (_lockObject)
             {
-                var maxNumber = _context.ConnectorJobs.Max(x => (x.SerialNumber)) ?? 0;
+                var maxNumber = _context.ConnectorJobs.Where(x => x.CompanyId == companyId).Max(x => (x.SerialNumber)) ?? 0;
                 data.SerialNumber = maxNumber + 1;
                 data.Code = data.SerialNumber.ToString().PadLeft(5, '0');
 
@@ -137,9 +148,11 @@ namespace DataNexApi.Controllers.Connector
         [HttpPut("updatedto")]
         public async Task<IActionResult> UpdateDto([FromBody] ConnectorJobDto connectorJobDto)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
-            var data = await _context.ConnectorJobs.FirstOrDefaultAsync(x => x.Id == connectorJobDto.Id);
+            var data = await _context.ConnectorJobs.FirstOrDefaultAsync(x => x.Id == connectorJobDto.Id && x.CompanyId == companyId);
             data.Name = connectorJobDto.Name;
             data.Icon = connectorJobDto.Icon;
             data.Description = connectorJobDto.Description;
@@ -149,6 +162,7 @@ namespace DataNexApi.Controllers.Connector
 
             data.UserUpdated = actionUser.Id;
             data.DateUpdated = DateTime.Now;
+            data.CompanyId = companyId;
 
             try
             {
@@ -169,9 +183,11 @@ namespace DataNexApi.Controllers.Connector
         [HttpDelete("deletebyid/{id}")]
         public async Task<IActionResult> DeleteById(Guid id)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
-            var data = await _context.ConnectorJobs.FirstOrDefaultAsync(x => x.Id == id);
+            var data = await _context.ConnectorJobs.FirstOrDefaultAsync(x => x.Id == id && x.CompanyId==companyId);
 
             try
             {

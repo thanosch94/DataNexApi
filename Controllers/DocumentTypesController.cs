@@ -29,7 +29,9 @@ namespace DataNexApi.Controllers
         [HttpGet("getall")]
         public async Task<IActionResult> GetAll()
         {
-            var data = await _context.DocumentTypes.ToListAsync();
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.DocumentTypes.Where(x=>x.CompanyId==companyId).ToListAsync();
 
             return Ok(data);
         }
@@ -37,7 +39,9 @@ namespace DataNexApi.Controllers
         [HttpGet("getactivedocumenttypeslookupbydocumententity/{documentTypeGroup}")]
         public async Task<IActionResult> GetActiveDocumentTypesLookupByDocumentTypeGroup(DocumentTypeGroupEnum documentTypeGroup)
         {
-            var data = await _context.DocumentTypes.Where(x=>x.DocumentTypeGroup == documentTypeGroup && x.IsActive==true).Select(x=> new DocumentTypeDto()
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.DocumentTypes.Where(x=>x.DocumentTypeGroup == documentTypeGroup && x.IsActive==true && x.CompanyId == companyId).Select(x=> new DocumentTypeDto()
             {
                 Id = x.Id,
                 Abbreviation = x.Abbreviation,
@@ -49,7 +53,9 @@ namespace DataNexApi.Controllers
         [HttpGet("getbyid/{id}")]
         public async Task<IActionResult> GetById(Guid id)
         {
-            var data = await _context.DocumentTypes.Where(x => x.Id == id).FirstOrDefaultAsync();
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.DocumentTypes.Where(x => x.Id == id && x.CompanyId == companyId).FirstOrDefaultAsync();
 
             var dto = _mapper.Map<DocumentTypeDto>(data);
 
@@ -61,6 +67,8 @@ namespace DataNexApi.Controllers
         public async Task<IActionResult> InsertDto([FromBody] DocumentTypeDto documentType)
 
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
             var data = new DocumentType();
@@ -73,10 +81,11 @@ namespace DataNexApi.Controllers
             data.PersonBalanceAffectBehavior = documentType.PersonBalanceAffectBehavior;
             data.WareHouseAffectBehavior =documentType.WareHouseAffectBehavior;
             data.UserAdded = actionUser.Id;
+            data.CompanyId= companyId;
 
             lock (_lockObject)
             {
-                var maxNumber = _context.DocumentTypes.Max(x => (x.SerialNumber)) ?? 0;
+                var maxNumber = _context.DocumentTypes.Where(x => x.CompanyId == companyId).Max(x => (x.SerialNumber)) ?? 0;
                 data.SerialNumber = maxNumber + 1;
                 data.Code = data.SerialNumber.ToString().PadLeft(5, '0');
                 try
@@ -102,9 +111,11 @@ namespace DataNexApi.Controllers
         [HttpPut("updatedto")]
         public async Task<IActionResult> UpdatetDto([FromBody] DocumentTypeDto documentType)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
-            var data = await _context.DocumentTypes.Where(x => x.Id == documentType.Id).FirstOrDefaultAsync();
+            var data = await _context.DocumentTypes.Where(x => x.Id == documentType.Id && x.CompanyId == companyId).FirstOrDefaultAsync();
 
 
             if (!data.IsSeeded)
@@ -116,6 +127,7 @@ namespace DataNexApi.Controllers
                 data.IsActive = documentType.IsActive;
                 data.PersonBalanceAffectBehavior = documentType.PersonBalanceAffectBehavior;
                 data.WareHouseAffectBehavior = documentType.WareHouseAffectBehavior;
+                data.CompanyId=companyId;
                 try
                 {
                     await _context.SaveChangesAsync();
@@ -165,9 +177,11 @@ namespace DataNexApi.Controllers
         [HttpDelete("deletebyid/{id}")]
         public async Task<IActionResult> DeleteById(Guid id)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
-            var data = await _context.DocumentTypes.FirstOrDefaultAsync(x => x.Id == id);
+            var data = await _context.DocumentTypes.FirstOrDefaultAsync(x => x.Id == id && x.CompanyId==companyId);
 
             if (!data.IsSeeded)
             {

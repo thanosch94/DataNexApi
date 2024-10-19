@@ -27,8 +27,10 @@ namespace DataNexApi.Controllers
         [HttpGet("getall")]
         public async Task<IActionResult> GetAll()
         {
+            Guid companyId = GetCompanyFromHeader();
+
             //DnAdmin User must not be visible in the users list
-            var data = await _context.Users.Where(x=>x.Id != AppBase.DnAdmin).ToListAsync();
+            var data = await _context.Users.Where(x=>x.Id != AppBase.DnAdmin && x.CompanyId==companyId).ToListAsync();
 
             return Ok(data);
         }
@@ -36,7 +38,9 @@ namespace DataNexApi.Controllers
         [HttpGet("getbyid/{id}")]
         public async Task<IActionResult> GetById(Guid id)
         {
-            var data = await _context.Users.Where(x=>x.Id ==id).FirstOrDefaultAsync();
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.Users.Where(x=>x.Id == id && x.CompanyId == companyId).FirstOrDefaultAsync();
 
             return Ok(data);
         }
@@ -44,11 +48,13 @@ namespace DataNexApi.Controllers
         [HttpPost("insertdto")]
         public async Task<IActionResult> InsertDto([FromBody] UserDto dto)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
             var data = new User();
 
-            var exists = await _context.Users.Where(x => x.UserName == dto.UserName).FirstOrDefaultAsync();
+            var exists = await _context.Users.Where(x => x.UserName == dto.UserName && x.CompanyId == companyId).FirstOrDefaultAsync();
             if (exists == null)
             {
                 data.Name = dto.Name;
@@ -57,10 +63,11 @@ namespace DataNexApi.Controllers
                 data.UserRole = dto.UserRole;
                 data.PasswordHash = BCrypt.Net.BCrypt.EnhancedHashPassword(dto.Password);
                 data.UserAdded = actionUser.Id;
+                data.CompanyId = companyId;
 
                 lock (_lockObject)
                 {
-                    var maxNumber = _context.Users.Max(x => (x.SerialNumber)) ?? 0;
+                    var maxNumber = _context.Users.Where(x => x.CompanyId == companyId).Max(x => (x.SerialNumber)) ?? 0;
                     data.SerialNumber = maxNumber + 1;
                     data.Code = data.SerialNumber.ToString().PadLeft(5, '0');
 
@@ -92,14 +99,17 @@ namespace DataNexApi.Controllers
         [HttpPut("updatedto")]
         public async Task<IActionResult> UpdateDto([FromBody] UserDto dto)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
-            var data = await _context.Users.Where(x => x.Id == dto.Id).FirstOrDefaultAsync();
+            var data = await _context.Users.Where(x => x.Id == dto.Id && x.CompanyId == companyId).FirstOrDefaultAsync();
 
             data.Name = dto.Name;
             data.Email = dto.Email;
             data.UserName = dto.UserName;
             data.UserRole = dto.UserRole;
+            data.CompanyId = companyId;
 
             if (dto.Password!=null)
             {
@@ -127,9 +137,11 @@ namespace DataNexApi.Controllers
         [HttpDelete("deletebyid/{id}")]
         public async Task<IActionResult> DeleteById(Guid id)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
-            var data = await _context.Users.FirstOrDefaultAsync(x => x.Id == id);
+            var data = await _context.Users.FirstOrDefaultAsync(x => x.Id == id && x.CompanyId == companyId);
 
             _context.Users.Remove(data);
 

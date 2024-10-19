@@ -27,7 +27,9 @@ namespace DataNexApi.Controllers
         [HttpGet("getall")]
         public async Task<IActionResult> GetAll()
         {
-            var data = await _context.Suppliers.ToListAsync();
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.Suppliers.Where(x=>x.CompanyId==companyId).ToListAsync();
 
             return Ok(data);
         }
@@ -35,7 +37,9 @@ namespace DataNexApi.Controllers
         [HttpGet("getbyid/{id}")]
         public async Task<IActionResult> GetById(Guid id)
         {
-            var data = await _context.Suppliers.Where(x => x.Id == id).FirstOrDefaultAsync();
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.Suppliers.Where(x => x.Id == id && x.CompanyId == companyId).FirstOrDefaultAsync();
 
             var dto = _mapper.Map<SupplierDto>(data);
 
@@ -46,7 +50,9 @@ namespace DataNexApi.Controllers
         [HttpGet("getlookup")]
         public async Task<IActionResult> GetLookup()
         {
-            var data = await _context.Suppliers.Select(x => new SupplierDto()
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.Suppliers.Where(x=> x.CompanyId == companyId).Select(x => new SupplierDto()
             {
                 Id = x.Id,
                 Name = x.Name
@@ -57,8 +63,9 @@ namespace DataNexApi.Controllers
 
         [HttpPost("insertdto")]
         public async Task<IActionResult> InsertDto([FromBody] SupplierDto supplier)
-
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
             var data = new Supplier();
@@ -74,10 +81,11 @@ namespace DataNexApi.Controllers
             data.VatNumber = supplier.VatNumber;
             data.TaxOffice = supplier.TaxOffice;
             data.UserAdded = actionUser.Id;
+            data.CompanyId = companyId;
 
             lock (_lockObject)
             {
-                var maxNumber = _context.Suppliers.Max(x => (x.SerialNumber)) ?? 0;
+                var maxNumber = _context.Suppliers.Where(x => x.CompanyId == companyId).Max(x => (x.SerialNumber)) ?? 0;
                 data.SerialNumber = maxNumber + 1;
                 data.Code = data.SerialNumber.ToString().PadLeft(5, '0');
 
@@ -104,9 +112,11 @@ namespace DataNexApi.Controllers
         [HttpPut("updatedto")]
         public async Task<IActionResult> UpdateDto([FromBody] SupplierDto dto)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
-            var data = await _context.Suppliers.FirstOrDefaultAsync(x => x.Id == dto.Id);
+            var data = await _context.Suppliers.FirstOrDefaultAsync(x => x.Id == dto.Id && x.CompanyId == companyId);
 
             data.Name = dto.Name;
             data.Address = dto.Address;
@@ -119,7 +129,7 @@ namespace DataNexApi.Controllers
             data.Email = dto.Email;
             data.VatNumber = dto.VatNumber;
             data.TaxOffice = dto.TaxOffice;
-
+            data.CompanyId = companyId;
             try
             {
                 await _context.SaveChangesAsync();
@@ -138,9 +148,11 @@ namespace DataNexApi.Controllers
         [HttpDelete("deletebyid/{id}")]
         public async Task<IActionResult> DeleteById(Guid id)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
-            var data = await _context.Suppliers.FirstOrDefaultAsync(x => x.Id == id);
+            var data = await _context.Suppliers.FirstOrDefaultAsync(x => x.Id == id && x.CompanyId == companyId);
 
             _context.Suppliers.Remove(data);
 

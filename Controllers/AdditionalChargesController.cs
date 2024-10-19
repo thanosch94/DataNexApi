@@ -30,7 +30,9 @@ namespace DataNexApi.Controllers
         [HttpGet("getall")]
         public async Task<IActionResult> GetAll()
         {
-            var data = await _context.AdditionalCharges.ToListAsync();
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.AdditionalCharges.Where(x=> x.CompanyId==companyId).ToListAsync();
 
             return Ok(data);
         }
@@ -38,17 +40,19 @@ namespace DataNexApi.Controllers
         [HttpPost("insertdto")]
         public async Task<IActionResult> InsertDto([FromBody] AdditionalChargeDto additionalCharge)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
             var data = new AdditionalCharge();
             data.Name = additionalCharge.Name;
-            var source = await _context.AdditionalCharges.OrderByDescending(x => x.SerialNumber).FirstOrDefaultAsync();
+            data.CompanyId = companyId;
+            //var source = await _context.AdditionalCharges.OrderByDescending(x => x.SerialNumber).FirstOrDefaultAsync();
 
 
             lock (_lockObject)
             {
-
-                var maxNumber = _context.AdditionalCharges.Max(x => (x.SerialNumber)) ?? 0;
+                var maxNumber = _context.AdditionalCharges.Where(x=> x.CompanyId == companyId).Max(x => (x.SerialNumber)) ?? 0;
                 data.SerialNumber = maxNumber + 1;
                 data.Code = data.SerialNumber.ToString().PadLeft(5, '0');
                 try
@@ -72,15 +76,18 @@ namespace DataNexApi.Controllers
         }
 
         [HttpPut("updatedto")]
-        public async Task<IActionResult> UpdateDto([FromBody] AdditionalChargeDto additionalCharge)
+        public async Task<IActionResult> UpdateDto([FromBody] AdditionalChargeDto dto)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
-            var data = await _context.AdditionalCharges.FirstOrDefaultAsync(x => x.Id == additionalCharge.Id);
+            var data = await _context.AdditionalCharges.FirstOrDefaultAsync(x => x.Id == dto.Id && x.CompanyId == companyId);
 
-            data.Name = additionalCharge.Name;
+            data.Name = dto.Name;
             data.UserUpdated = actionUser.Id;
             data.DateUpdated = DateTime.Now;
+            data.CompanyId = companyId;
 
             try
             {
@@ -101,9 +108,11 @@ namespace DataNexApi.Controllers
         [HttpDelete("deletebyid/{id}")]
         public async Task<IActionResult> DeleteById(Guid id)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
-            var data = await _context.AdditionalCharges.FirstOrDefaultAsync(x => x.Id == id);
+            var data = await _context.AdditionalCharges.FirstOrDefaultAsync(x => x.Id == id && x.CompanyId==companyId);
 
             try
             {
@@ -120,18 +129,18 @@ namespace DataNexApi.Controllers
             return Ok(data);
         }
 
-        private int GetNextAdditionalChargeSerial()
-        {
+        //private int GetNextAdditionalChargeSerial()
+        //{
 
-            var parameter = new Microsoft.Data.SqlClient.SqlParameter("@result", 8);
+        //    var parameter = new Microsoft.Data.SqlClient.SqlParameter("@result", 8);
 
-            parameter.Direction = System.Data.ParameterDirection.Output;
+        //    parameter.Direction = System.Data.ParameterDirection.Output;
 
-            _context.Database.ExecuteSqlRaw("set @result = NEXT VALUE FOR AdditionalChargeSerialNumbers", parameter);
+        //    _context.Database.ExecuteSqlRaw("set @result = NEXT VALUE FOR AdditionalChargeSerialNumbers", parameter);
 
-            var nextVal = (int)parameter.Value;
+        //    var nextVal = (int)parameter.Value;
 
-            return nextVal;
-        }
+        //    return nextVal;
+        //}
     }
 }

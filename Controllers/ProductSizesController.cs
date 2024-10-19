@@ -27,7 +27,9 @@ namespace DataNexApi.Controllers
         [HttpGet("getall")]
         public async Task<IActionResult> GetAll()
         {
-            var data = await _context.ProductSizes.ToListAsync();
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.ProductSizes.Where(x => x.CompanyId == companyId).ToListAsync();
 
             return Ok(data);
         }
@@ -35,7 +37,9 @@ namespace DataNexApi.Controllers
         [HttpGet("getbyid/{id}")]
         public async Task<IActionResult> GetById(Guid id)
         {
-            var data = await _context.ProductSizes.Where(x => x.Id == id).FirstOrDefaultAsync();
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.ProductSizes.Where(x => x.Id == id && x.CompanyId==companyId).FirstOrDefaultAsync();
 
             var dto = _mapper.Map<ProductSizeDto>(data);
 
@@ -45,7 +49,9 @@ namespace DataNexApi.Controllers
         [HttpGet("getlookup")]
         public async Task<IActionResult> GetLookup()
         {
-            var data = await _context.ProductSizes.Select(x => new ProductSizeDto()
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.ProductSizes.Where(x=>x.CompanyId==companyId).Select(x => new ProductSizeDto()
             {
                 Id = x.Id,
                 Name = x.Name
@@ -57,16 +63,19 @@ namespace DataNexApi.Controllers
         [HttpPost("insertdto")]
         public async Task<IActionResult> InsertDto([FromBody] ProductSizeDto productSize)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
             var data = new ProductSize();
             data.Name = productSize.Name;
             data.Abbreviation = productSize.Abbreviation;
             data.UserAdded = actionUser.Id;
+            data.CompanyId=companyId;
 
             lock (_lockObject)
             {
-                var maxNumber = _context.ProductSizes.Max(x => (x.SerialNumber)) ?? 0;
+                var maxNumber = _context.ProductSizes.Where(x=>x.CompanyId==companyId).Max(x => (x.SerialNumber)) ?? 0;
                 data.SerialNumber = maxNumber + 1;
                 data.Code = data.SerialNumber.ToString().PadLeft(5, '0');
 
@@ -90,12 +99,15 @@ namespace DataNexApi.Controllers
         [HttpPut("updatedto")]
         public async Task<IActionResult> UpdateDto([FromBody] ProductSizeDto productSize)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
-            var data = await _context.ProductSizes.FirstOrDefaultAsync(x => x.Id == productSize.Id);
+            var data = await _context.ProductSizes.FirstOrDefaultAsync(x => x.Id == productSize.Id && x.CompanyId==companyId);
 
             data.Name = productSize.Name;
             data.Abbreviation = productSize.Abbreviation;
+            data.CompanyId = companyId;
 
             try
             {
@@ -115,9 +127,11 @@ namespace DataNexApi.Controllers
         [HttpDelete("deletebyid/{id}")]
         public async Task<IActionResult> DeleteById(Guid id)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
-            var data = await _context.ProductSizes.FirstOrDefaultAsync(x => x.Id == id);
+            var data = await _context.ProductSizes.FirstOrDefaultAsync(x => x.Id == id && x.CompanyId==companyId);
 
             try
             {

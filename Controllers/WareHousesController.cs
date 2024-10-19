@@ -29,7 +29,21 @@ namespace DataNexApi.Controllers
         [HttpGet("getall")]
         public async Task<IActionResult> GetAll()
         {
-            var data = await _context.WareHouses.ToListAsync();
+            Guid companyId = GetCompanyFromHeader();
+            var data = await _context.WareHouses.Where(x => x.CompanyId == companyId).ToListAsync();
+
+            return Ok(data);
+        }
+
+        [HttpGet("getlookup")]
+        public async Task<IActionResult> GetLookup()
+        {
+            Guid companyId = GetCompanyFromHeader();
+            var data = await _context.WareHouses.Where(x => x.CompanyId == companyId).Select(x=>new WareHouseDto()
+            {
+                Id=x.Id,
+                Name=x.Name,
+            }).ToListAsync();
 
             return Ok(data);
         }
@@ -37,21 +51,23 @@ namespace DataNexApi.Controllers
         [HttpPost("insertdto")]
         public async Task<IActionResult> InsertDto([FromBody] WareHouseDto wareHouse)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
             var data = new WareHouse();
 
-            var exists = await _context.WareHouses.Where(x => x.Name == wareHouse.Name).FirstOrDefaultAsync();
+            var exists = await _context.WareHouses.Where(x => x.Name == wareHouse.Name && x.CompanyId==companyId).FirstOrDefaultAsync();
             if (exists == null)
             {
                 data.Name = wareHouse.Name;
                 data.UserAdded = actionUser.Id;
                 data.IsDefault = wareHouse.IsDefault;
-                data.CompanyId = wareHouse.CompanyId;
+                data.CompanyId = companyId;
 
                 lock (_lockObject)
                 {
-                    var maxNumber = _context.WareHouses.Max(x => (x.SerialNumber)) ?? 0;
+                    var maxNumber = _context.WareHouses.Where(x=> x.CompanyId == companyId).Max(x => (x.SerialNumber)) ?? 0;
                     data.SerialNumber = maxNumber + 1;
                     data.Code = data.SerialNumber.ToString().PadLeft(5, '0');
 
@@ -81,14 +97,16 @@ namespace DataNexApi.Controllers
         [HttpPut("updatedto")]
         public async Task<IActionResult> UpdateDto([FromBody] WareHouseDto wareHouse)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
-            var data = await _context.WareHouses.Where(x => x.Id == wareHouse.Id).FirstOrDefaultAsync();
+            var data = await _context.WareHouses.Where(x => x.Id == wareHouse.Id && x.CompanyId == companyId).FirstOrDefaultAsync();
 
             data.Name = wareHouse.Name;
             data.UserAdded = actionUser.Id;
             data.IsDefault = wareHouse.IsDefault;
-            data.CompanyId = wareHouse.CompanyId;
+            data.CompanyId = companyId;
 
             try
             {
@@ -111,9 +129,11 @@ namespace DataNexApi.Controllers
         [HttpDelete("deletebyid/{id}")]
         public async Task<IActionResult> DeleteById(Guid id)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
-            var data = await _context.WareHouses.FirstOrDefaultAsync(x => x.Id == id);
+            var data = await _context.WareHouses.FirstOrDefaultAsync(x => x.Id == id && x.CompanyId == companyId);
 
             _context.WareHouses.Remove(data);
 

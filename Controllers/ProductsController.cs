@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using System.ComponentModel.Design;
 
 namespace DataNexApi.Controllers
 {
@@ -29,6 +30,8 @@ namespace DataNexApi.Controllers
         [HttpGet("getall")]
         public async Task<IActionResult> GetAll()
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var data = await _context.Products.Include(x => x.Brand).Select(x => new ProductDto()
             {
                 Id = x.Id,
@@ -42,8 +45,9 @@ namespace DataNexApi.Controllers
                 WholesalePrice = x.WholesalePrice,
                 VatClassId = x.VatClassId,
                 BrandId = x.BrandId,
-                BrandName = x.Brand.Name
-            }).ToListAsync();
+                BrandName = x.Brand.Name,
+                CompanyId = x.CompanyId
+            }).Where(x=>x.CompanyId==companyId).ToListAsync();
 
             return Ok(data);
         }
@@ -52,7 +56,9 @@ namespace DataNexApi.Controllers
         [HttpGet("getbyid/{id}")]
         public async Task<IActionResult> GetById(Guid id)
         {
-            var data = await _context.Products.Include(x => x.Brand).Where(x => x.Id == id).Select(x => new ProductDto()
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.Products.Include(x => x.Brand).Where(x => x.Id == id && x.CompanyId == companyId).Select(x => new ProductDto()
             {
                 Id = x.Id,
                 SerialNumber = x.SerialNumber,
@@ -78,7 +84,9 @@ namespace DataNexApi.Controllers
         [HttpGet("getbysku/{sku}")]
         public async Task<IActionResult> GetBySku(string sku)
         {
-            var data = await _context.Products.Where(x => x.Sku == sku).FirstOrDefaultAsync();
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.Products.Where(x => x.Sku == sku && x.CompanyId == companyId).FirstOrDefaultAsync();
 
             var dto = _mapper.Map<ProductDto>(data);
 
@@ -88,11 +96,13 @@ namespace DataNexApi.Controllers
         [HttpGet("getlookup")]
         public async Task<IActionResult> GetLookup()
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var data = await _context.Products.Select(x => new ProductDto()
             {
                 Id = x.Id,
                 Name = x.Name
-            }).ToListAsync();
+            }).Where(x => x.CompanyId == companyId).ToListAsync();
 
             return Ok(data);
         }
@@ -101,6 +111,8 @@ namespace DataNexApi.Controllers
         [HttpPost("insertdto")]
         public async Task<IActionResult> InsertDto([FromBody] ProductDto product)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
             var data = new Product();
@@ -113,11 +125,11 @@ namespace DataNexApi.Controllers
             data.BrandId = product.BrandId;
             data.VatClassId = product.VatClassId;
             data.UserAdded = actionUser.Id;
-
+            data.CompanyId= companyId;
 
             lock (_lockObject)
             {
-                var maxNumber = _context.Products.Max(x => (x.SerialNumber)) ?? 0;
+                var maxNumber = _context.Products.Where(x => x.CompanyId == companyId).Max(x => (x.SerialNumber)) ?? 0;
                 data.SerialNumber = maxNumber + 1;
                 data.Code = data.SerialNumber.ToString().PadLeft(5, '0');
 
@@ -142,9 +154,11 @@ namespace DataNexApi.Controllers
         [HttpPut("updatedto")]
         public async Task<IActionResult> UpdateDto([FromBody] ProductDto product)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
-            var data = await _context.Products.FirstOrDefaultAsync(x => x.Id == product.Id);
+            var data = await _context.Products.FirstOrDefaultAsync(x => x.Id == product.Id && x.CompanyId == companyId);
 
             data.Name = product.Name;
             data.Sku = product.Sku;
@@ -154,6 +168,7 @@ namespace DataNexApi.Controllers
             data.WholesalePrice = product.WholesalePrice;
             data.VatClassId = product.VatClassId;
             data.BrandId = product.BrandId;
+            data.CompanyId = companyId;
 
             try
             {
@@ -175,9 +190,11 @@ namespace DataNexApi.Controllers
         [HttpDelete("deletebyid/{id}")]
         public async Task<IActionResult> DeleteById(Guid id)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
-            var data = await _context.Products.FirstOrDefaultAsync(x => x.Id == id);
+            var data = await _context.Products.FirstOrDefaultAsync(x => x.Id == id && x.CompanyId == companyId);
 
             try
             {

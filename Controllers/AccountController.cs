@@ -29,12 +29,12 @@ namespace DataNexApi.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody]LoginDto dto)
         {
-
+            Guid companyId = GetCompanyFromHeader();
 
             var apiResponse = new ApiResponseDto();
 
             var success = false;
-            var user = await _context.Users.Where(x => x.UserName == dto.UserName).FirstOrDefaultAsync();
+            var user = await _context.Users.Where(x => x.UserName == dto.UserName && x.CompanyId==dto.CompanyId).FirstOrDefaultAsync();
             if (user != null && dto.Password != null)
             {
                 success = BCrypt.Net.BCrypt.EnhancedVerify(dto.Password, user.PasswordHash);

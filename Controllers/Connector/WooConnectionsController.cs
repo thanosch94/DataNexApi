@@ -28,25 +28,30 @@ namespace DataNexApi.Controllers.Connector
         [HttpGet("getall")]
         public async Task<IActionResult> GetAll()
         {
-            var data = await _context.WooConnectionsData.ToListAsync();
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.WooConnectionsData.Where(x=> x.CompanyId == companyId).ToListAsync();
 
             return Ok(data);
         }
 
         [HttpPost("insertdto")]
-        public async Task<IActionResult> InsertDto([FromBody] WooConnectionsDataDto wooConnectionsDataDto)
+        public async Task<IActionResult> InsertDto([FromBody] WooConnectionsDataDto dto)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
             var data = new WooConnectionsData();
-            data.Name = wooConnectionsDataDto.Name;
-            data.RequestType = wooConnectionsDataDto.RequestType;
-            data.Endpoint = wooConnectionsDataDto.Endpoint;
-            data.WooEntity = wooConnectionsDataDto.WooEntity;
+            data.Name = dto.Name;
+            data.RequestType = dto.RequestType;
+            data.Endpoint = dto.Endpoint;
+            data.WooEntity = dto.WooEntity;
+            data.CompanyId = companyId;
 
             lock (_lockObject)
             {
-                var maxNumber = _context.WooConnectionsData.Max(x => (x.SerialNumber)) ?? 0;
+                var maxNumber = _context.WooConnectionsData.Where(x=> x.CompanyId == companyId).Max(x => (x.SerialNumber)) ?? 0;
                 data.SerialNumber = maxNumber + 1;
                 data.Code = data.SerialNumber.ToString().PadLeft(5, '0');
 
@@ -65,24 +70,27 @@ namespace DataNexApi.Controllers.Connector
             };
 
 
-            var dto = _mapper.Map<WooConnectionsDataDto>(data);
+            var dtoToReturn = _mapper.Map<WooConnectionsDataDto>(data);
 
-            return Ok(dto);
+            return Ok(dtoToReturn);
         }
 
         [HttpPut("updatedto")]
-        public async Task<IActionResult> UpdateDto([FromBody] WooConnectionsDataDto wooConnectionsDataDto)
+        public async Task<IActionResult> UpdateDto([FromBody] WooConnectionsDataDto dto)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
-            var data = await _context.WooConnectionsData.FirstOrDefaultAsync(x => x.Id == wooConnectionsDataDto.Id);
-            data.Name = wooConnectionsDataDto.Name;
-            data.RequestType = wooConnectionsDataDto.RequestType;
-            data.Endpoint = wooConnectionsDataDto.Endpoint;
-            data.WooEntity = wooConnectionsDataDto.WooEntity;
+            var data = await _context.WooConnectionsData.FirstOrDefaultAsync(x => x.Id == dto.Id && x.CompanyId == companyId);
+            data.Name = dto.Name;
+            data.RequestType = dto.RequestType;
+            data.Endpoint = dto.Endpoint;
+            data.WooEntity = dto.WooEntity;
 
             data.UserUpdated = actionUser.Id;
             data.DateUpdated = DateTime.Now;
+            data.CompanyId =companyId;
 
             try
             {
@@ -96,17 +104,19 @@ namespace DataNexApi.Controllers.Connector
                 LogService.CreateLog($"Woo Connection data could not be updated by \"{actionUser.UserName}\"  Data: {JsonConvert.SerializeObject(data)} Error: {ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
             }
-            var dto = _mapper.Map<WooConnectionsDataDto>(data);
+            var dtoToReturn = _mapper.Map<WooConnectionsDataDto>(data);
 
-            return Ok(dto);
+            return Ok(dtoToReturn);
         }
 
         [HttpDelete("deletebyid/{id}")]
         public async Task<IActionResult> DeleteById(Guid id)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
-            var data = await _context.WooConnectionsData.FirstOrDefaultAsync(x => x.Id == id);
+            var data = await _context.WooConnectionsData.FirstOrDefaultAsync(x => x.Id == id && x.CompanyId==companyId);
 
             try
             {

@@ -27,7 +27,9 @@ namespace DataNexApi.Controllers
         [HttpGet("getall")]
         public async Task<IActionResult> GetAll()
         {
-            var data = await _context.Statuses.ToListAsync();
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.Statuses.Where(x=>x.CompanyId==companyId).ToListAsync();
 
             return Ok(data);
         }
@@ -35,19 +37,22 @@ namespace DataNexApi.Controllers
         [HttpPost("insertdto")]
         public async Task<IActionResult> InsertDto([FromBody] StatusDto status)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
             var data = new Status();
 
-            var exists = await _context.Statuses.Where(x => x.Name == status.Name).FirstOrDefaultAsync();
+            var exists = await _context.Statuses.Where(x => x.Name == status.Name && x.CompanyId == companyId).FirstOrDefaultAsync();
             if (exists == null)
             {
                 data.Name = status.Name;
                 data.UserAdded = actionUser.Id;
+                data.CompanyId = companyId;
 
                 lock (_lockObject)
                 {
-                    var maxNumber = _context.Statuses.Max(x => (x.SerialNumber)) ?? 0;
+                    var maxNumber = _context.Statuses.Where(x => x.CompanyId == companyId).Max(x => (x.SerialNumber)) ?? 0;
                     data.SerialNumber = maxNumber + 1;
                     data.Code = data.SerialNumber.ToString().PadLeft(5, '0');
 
@@ -76,11 +81,14 @@ namespace DataNexApi.Controllers
         [HttpPut("updatedto")]
         public async Task<IActionResult> UpdateDto([FromBody] StatusDto status)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
-            var data = await _context.Statuses.Where(x => x.Id == status.Id).FirstOrDefaultAsync();
+            var data = await _context.Statuses.Where(x => x.Id == status.Id && x.CompanyId == companyId).FirstOrDefaultAsync();
 
             data.Name = status.Name;
+            data.CompanyId = companyId;
 
             try
             {
@@ -101,9 +109,11 @@ namespace DataNexApi.Controllers
         [HttpDelete("deletebyid/{id}")]
         public async Task<IActionResult> DeleteById(Guid id)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
-            var data = await _context.Statuses.FirstOrDefaultAsync(x => x.Id == id);
+            var data = await _context.Statuses.FirstOrDefaultAsync(x => x.Id == id && x.CompanyId == companyId);
 
             try
             {

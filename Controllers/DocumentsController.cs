@@ -27,7 +27,9 @@ namespace DataNexApi.Controllers
         [HttpGet("getall")]
         public async Task<IActionResult> GetAll()
         {
-            var data = await _context.Documents.Include(x => x.Customer).Include(x => x.DocumentType).OrderByDescending(x => x.DocumentNumber).Select(x => new DocumentDto()
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.Documents.Include(x => x.Customer).Include(x => x.DocumentType).Where(x => x.CompanyId == companyId).OrderByDescending(x => x.DocumentNumber).Select(x => new DocumentDto()
             {
                 Id = x.Id,
                 Code = x.Code,
@@ -62,7 +64,7 @@ namespace DataNexApi.Controllers
                 UserDate2 = x.UserDate2,
                 UserDate3 = x.UserDate3,
                 UserDate4 = x.UserDate4
-            }).ToListAsync();
+            }).AsSplitQuery().ToListAsync();
 
             return Ok(data);
         }
@@ -70,7 +72,9 @@ namespace DataNexApi.Controllers
         [HttpGet("getbyid/{id}")]
         public async Task<IActionResult> GetById(Guid id)
         {
-            var data = await _context.Documents.Include(x => x.DocumentStatus).Include(x => x.Customer).Include(x => x.DocumentType).Where(x => x.Id == id).Select(x => new DocumentDto()
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.Documents.Include(x => x.DocumentStatus).Include(x => x.Customer).Include(x => x.DocumentType).Where(x => x.Id == id && x.CompanyId == companyId).Select(x => new DocumentDto()
             {
                 Id = x.Id,
                 Code = x.Code,
@@ -108,7 +112,7 @@ namespace DataNexApi.Controllers
                 UserDate3 = x.UserDate3,
                 UserDate4 = x.UserDate4,
 
-            }).FirstOrDefaultAsync();
+            }).AsSplitQuery().FirstOrDefaultAsync();
 
 
             return Ok(data);
@@ -118,7 +122,9 @@ namespace DataNexApi.Controllers
         [HttpGet("getbydocumenttypegroup/{documentTypeGroup}")]
         public async Task<IActionResult> GetByDocumnentTypeGroup(DocumentTypeGroupEnum documentTypeGroup)
         {
-            var data = await _context.Documents.Where(x => x.DocumentType.DocumentTypeGroup == documentTypeGroup).Select(x => new DocumentDto()
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.Documents.Where(x => x.DocumentType.DocumentTypeGroup == documentTypeGroup && x.CompanyId == companyId).Select(x => new DocumentDto()
             {
                 Id = x.Id,
                 Code = x.Code,
@@ -153,7 +159,7 @@ namespace DataNexApi.Controllers
                 UserDate1 = x.UserDate1,
                 UserDate2 = x.UserDate2,
                 UserDate3 = x.UserDate3,
-                UserDate4 = x.UserDate4
+                UserDate4 = x.UserDate4             
             }).ToListAsync();
 
             return Ok(data);
@@ -163,13 +169,15 @@ namespace DataNexApi.Controllers
         public async Task<IActionResult> InsertDto([FromBody] DocumentDto document)
 
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
             var data = new Document();
             data.Id = document.Id;
             data.DocumentTypeId = document.DocumentTypeId;
             data.DocumentDateTime = document.DocumentDateTime;
-            var source = await _context.Documents.Where(x => x.DocumentTypeId == document.DocumentTypeId).OrderByDescending(x => x.DocumentNumber).FirstOrDefaultAsync();
+            var source = await _context.Documents.Where(x => x.DocumentTypeId == document.DocumentTypeId && x.CompanyId == companyId).OrderByDescending(x => x.DocumentNumber).FirstOrDefaultAsync();
             if (source != null)
             {
                 data.DocumentNumber = source.DocumentNumber + 1;
@@ -179,7 +187,7 @@ namespace DataNexApi.Controllers
                 data.DocumentNumber = 1;
             }
 
-            var documentType = await _context.DocumentTypes.FirstOrDefaultAsync(x => x.Id == document.DocumentTypeId);
+            var documentType = await _context.DocumentTypes.FirstOrDefaultAsync(x => x.Id == document.DocumentTypeId && x.CompanyId == companyId);
             if (documentType != null)
             {
                 data.DocumentCode = documentType.Abbreviation + "-" + data.DocumentNumber.ToString().PadLeft(6, '0');
@@ -210,12 +218,12 @@ namespace DataNexApi.Controllers
             data.UserDate3 = document.UserDate3;
             data.UserDate4 = document.UserDate4;
             data.UserAdded = actionUser.Id;
-
+            data.CompanyId = companyId;
 
             lock (_lockObject)
             {
 
-                var maxNumber = _context.Documents.Max(x => (x.SerialNumber)) ?? 0;
+                var maxNumber = _context.Documents.Where(x=>x.CompanyId == companyId).Max(x => (x.SerialNumber)) ?? 0;
                 data.SerialNumber = maxNumber + 1;
                 data.Code = data.SerialNumber.ToString().PadLeft(6, '0');
 
@@ -245,7 +253,7 @@ namespace DataNexApi.Controllers
 
             if (dto.CustomerId != null)
             {
-                var customer = await _context.Customers.Where(x => x.Id == dto.CustomerId).FirstOrDefaultAsync();
+                var customer = await _context.Customers.Where(x => x.Id == dto.CustomerId && x.CompanyId==companyId).FirstOrDefaultAsync();
                 dto.CustomerPhone1 = customer.Phone1;
 
             }
@@ -262,12 +270,14 @@ namespace DataNexApi.Controllers
         public async Task<IActionResult> UpdatetDto([FromBody] DocumentDto document)
 
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
-            var data = await _context.Documents.Where(x => x.Id == document.Id).FirstOrDefaultAsync();
+            var data = await _context.Documents.Where(x => x.Id == document.Id && x.CompanyId == companyId).FirstOrDefaultAsync();
 
             data.DocumentTypeId = document.DocumentTypeId;
-            var source = await _context.Documents.Where(x => x.DocumentTypeId == document.DocumentTypeId).OrderByDescending(x => x.DocumentNumber).FirstOrDefaultAsync();
+            //var source = await _context.Documents.Where(x => x.DocumentTypeId == document.DocumentTypeId && x.CompanyId == companyId).OrderByDescending(x => x.DocumentNumber).FirstOrDefaultAsync();
 
             data.CustomerId = document.CustomerId;
             data.SupplierId = document.SupplierId;
@@ -294,6 +304,7 @@ namespace DataNexApi.Controllers
             data.UserDate2 = document.UserDate2;
             data.UserDate3 = document.UserDate3;
             data.UserDate4 = document.UserDate4;
+            data.CompanyId = companyId;
 
             //var documentProducts = await _context.DocumentProducts.Include(x=>x.Product).Where(x => x.DocumentId == data.Id).ToListAsync();
             //decimal total = 0;
@@ -327,9 +338,11 @@ namespace DataNexApi.Controllers
         [HttpDelete("deletebyid/{id}")]
         public async Task<IActionResult> DeleteById(Guid id)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
-            var data = await _context.Documents.FirstOrDefaultAsync(x => x.Id == id);
+            var data = await _context.Documents.FirstOrDefaultAsync(x => x.Id == id && x.CompanyId == companyId);
 
             var documentAdditionalCharges = await _context.DocumentAdditionalCharges.Where(x => x.DocumentId == id).ToListAsync();
             try
@@ -361,11 +374,13 @@ namespace DataNexApi.Controllers
         [HttpGet("getaAccountsPayableListData")]
         public async Task<IActionResult> GetaAccountsPayableListData()
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var data = await _context.Suppliers.Select(x => new AccountPayableDto()
             {
                 SupplierId = x.Id,
                 SupplierName = x.Name,
-                PayableTotal = x.Documents.Where(x => x.DocumentType.DocumentTypeGroup == DocumentTypeGroupEnum.Purchasing && x.DocumentType.PersonBalanceAffectBehavior == DocTypeAffectBehaviorEnum.Increase).Select(x => x.DocumentTotal).Sum() - x.Documents.Where(x => x.DocumentType.DocumentTypeGroup == DocumentTypeGroupEnum.Purchasing && x.DocumentType.PersonBalanceAffectBehavior == DocTypeAffectBehaviorEnum.Decrease).Select(x => x.DocumentTotal).Sum(),
+                PayableTotal = x.Documents.Where(x => x.DocumentType.DocumentTypeGroup == DocumentTypeGroupEnum.Purchasing && x.DocumentType.PersonBalanceAffectBehavior == DocTypeAffectBehaviorEnum.Increase && x.CompanyId == companyId).Select(x => x.DocumentTotal).Sum() - x.Documents.Where(x => x.DocumentType.DocumentTypeGroup == DocumentTypeGroupEnum.Purchasing && x.DocumentType.PersonBalanceAffectBehavior == DocTypeAffectBehaviorEnum.Decrease).Select(x => x.DocumentTotal).Sum(),
             }).OrderByDescending(x => x.PayableTotal).ToListAsync();
 
             return Ok(data);
@@ -375,14 +390,16 @@ namespace DataNexApi.Controllers
         [HttpGet("getChargeableDocumentsBySupplierId/{id}")]
         public async Task<IActionResult> GetChargeableDocumentsBySupplierId(Guid id)
         {
-            var documents = await _context.Suppliers.Where(x => x.Id == id).Select(x => x.Documents).FirstOrDefaultAsync();
+            Guid companyId = GetCompanyFromHeader();
+
+            var documents = await _context.Suppliers.Where(x => x.Id == id && x.CompanyId == companyId).Select(x => x.Documents).FirstOrDefaultAsync();
 
             if (documents != null)
             {
                 foreach (var document in documents)
                 {
                     var documentType = await _context.DocumentTypes
-                        .Where(x => x.Id == document.DocumentTypeId)
+                        .Where(x => x.Id == document.DocumentTypeId && x.CompanyId == companyId)
                         .Select(x => new DocumentTypeDto()
                         {
                             PersonBalanceAffectBehavior = x.PersonBalanceAffectBehavior
@@ -405,11 +422,13 @@ namespace DataNexApi.Controllers
         [HttpGet("getaAccountsReceivableListData")]
         public async Task<IActionResult> GetaAccountsReceivableListData()
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var data = await _context.Customers.Select(x => new AccountReceivableDto()
             {
                 CustomerId = x.Id,
                 CustomerName = x.Name,
-                ReceivableTotal = x.Documents.Where(x => x.DocumentType.DocumentTypeGroup == DocumentTypeGroupEnum.Sales && x.DocumentType.PersonBalanceAffectBehavior == DocTypeAffectBehaviorEnum.Increase).Select(x => x.DocumentTotal).Sum() - x.Documents.Where(x => x.DocumentType.DocumentTypeGroup == DocumentTypeGroupEnum.Sales && x.DocumentType.PersonBalanceAffectBehavior == DocTypeAffectBehaviorEnum.Decrease).Select(x => x.DocumentTotal).Sum(),
+                ReceivableTotal = x.Documents.Where(x => x.DocumentType.DocumentTypeGroup == DocumentTypeGroupEnum.Sales && x.DocumentType.PersonBalanceAffectBehavior == DocTypeAffectBehaviorEnum.Increase && x.CompanyId == companyId).Select(x => x.DocumentTotal).Sum() - x.Documents.Where(x => x.DocumentType.DocumentTypeGroup == DocumentTypeGroupEnum.Sales && x.DocumentType.PersonBalanceAffectBehavior == DocTypeAffectBehaviorEnum.Decrease).Select(x => x.DocumentTotal).Sum(),
             }).OrderByDescending(x => x.ReceivableTotal).ToListAsync();
 
             return Ok(data);
@@ -418,14 +437,16 @@ namespace DataNexApi.Controllers
         [HttpGet("getChargeableDocumentsByCustomerId/{id}")]
         public async Task<IActionResult> GetChargeableDocumentsByCustomerId(Guid id)
         {
-            var documents = await _context.Customers.Where(x => x.Id == id).Select(x => x.Documents).FirstOrDefaultAsync();
+            Guid companyId = GetCompanyFromHeader();
+
+            var documents = await _context.Customers.Where(x => x.Id == id && x.CompanyId==companyId).Select(x => x.Documents).FirstOrDefaultAsync();
 
             if (documents != null)
             {
                 foreach (var document in documents)
                 {
                     var documentType = await _context.DocumentTypes
-                        .Where(x => x.Id == document.DocumentTypeId)
+                        .Where(x => x.Id == document.DocumentTypeId && x.CompanyId == companyId)
                         .Select(x => new DocumentTypeDto()
                         {
                             Name = x.Name,

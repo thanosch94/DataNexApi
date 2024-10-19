@@ -28,7 +28,9 @@ namespace DataNexApi.Controllers
         [HttpGet("getall")]
         public async Task<IActionResult> GetAll()
         {
-            var data = await _context.Customers.ToListAsync();
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.Customers.Where(x=> x.CompanyId == companyId).ToListAsync();
 
             return Ok(data);
         }
@@ -36,6 +38,8 @@ namespace DataNexApi.Controllers
         [HttpGet("getfromaade/{username}/{password}/{afmCalledFor}/{afmCalledBy}")]
         public async Task<IActionResult> GetFromAade(string username, string password, string afmCalledFor, string? afmCalledBy)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var data = AadeService.GetDataFromAade(username, password, afmCalledBy, afmCalledFor);
 
             return Ok(data);
@@ -44,7 +48,9 @@ namespace DataNexApi.Controllers
         [HttpGet("getbyid/{id}")]
         public async Task<IActionResult> GetById(Guid id)
         {
-            var data = await _context.Customers.Where(x => x.Id == id).FirstOrDefaultAsync();
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.Customers.Where(x => x.Id == id && x.CompanyId == companyId).FirstOrDefaultAsync();
 
             var dto = _mapper.Map<CustomerDto>(data);
 
@@ -55,19 +61,23 @@ namespace DataNexApi.Controllers
         [HttpGet("getlookup")]
         public async Task<IActionResult> GetLookup()
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var data = await _context.Customers.Select(x => new CustomerDto()
             {
                 Id = x.Id,
-                Name = x.Name
-            }).ToListAsync();
+                Name = x.Name,
+                CompanyId=x.CompanyId
+            }).Where(x=>x.CompanyId==companyId).ToListAsync();
 
             return Ok(data);
         }
 
         [HttpPost("insertdto")]
         public async Task<IActionResult> InsertDto([FromBody] CustomerDto customer)
-
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
             var data = new Customer();
@@ -83,12 +93,12 @@ namespace DataNexApi.Controllers
             data.VatNumber = customer.VatNumber;
             data.TaxOffice = customer.TaxOffice;
             data.UserAdded = actionUser.Id;
-
+            data.CompanyId = companyId;
             lock (_lockObject)
             {
                 try
                 {
-                    var maxNumber = _context.Customers.Max(x => (x.SerialNumber)) ?? 0;
+                    var maxNumber = _context.Customers.Where(x=> x.CompanyId == companyId).Max(x => (x.SerialNumber)) ?? 0;
                     data.SerialNumber = maxNumber + 1;
                     data.Code = data.SerialNumber.ToString().PadLeft(5, '0');
 
@@ -115,9 +125,11 @@ namespace DataNexApi.Controllers
         [HttpPut("updatedto")]
         public async Task<IActionResult> UpdateDto([FromBody] CustomerDto dto)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
-            var data = await _context.Customers.FirstOrDefaultAsync(x => x.Id == dto.Id);
+            var data = await _context.Customers.FirstOrDefaultAsync(x => x.Id == dto.Id && x.CompanyId == companyId);
 
             data.Name = dto.Name;
             data.Address = dto.Address;
@@ -130,6 +142,7 @@ namespace DataNexApi.Controllers
             data.Email = dto.Email;
             data.VatNumber = dto.VatNumber;
             data.TaxOffice = dto.TaxOffice;
+            data.CompanyId = companyId;
 
             try
             {
@@ -149,9 +162,11 @@ namespace DataNexApi.Controllers
         [HttpDelete("deletebyid/{id}")]
         public async Task<IActionResult> DeleteById(Guid id)
         {
+            Guid companyId = GetCompanyFromHeader();
+
             var actionUser = await GetActionUser();
 
-            var data = await _context.Customers.FirstOrDefaultAsync(x => x.Id == id);
+            var data = await _context.Customers.FirstOrDefaultAsync(x => x.Id == id && x.CompanyId==companyId);
 
             _context.Customers.Remove(data);
 
