@@ -32,6 +32,9 @@ namespace DataNexApi.Mapping
             CreateMap<Supplier, SupplierDto>().ReverseMap();
             CreateMap<VatClass, VatClassDto>().ReverseMap();
             CreateMap<Company, CompanyDto>().ReverseMap();
+            CreateMap<Lot, LotDto>().ReverseMap();
+            CreateMap<GeneralOptions, GeneralOptionsDto>().ReverseMap();
+            CreateMap<LotSettings, LotSettingsDto>().ReverseMap();
         }
     }
 }

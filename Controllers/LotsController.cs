@@ -33,6 +33,20 @@ namespace DataNexApi.Controllers
             var data = await _context.Lots.Where(x => x.CompanyId == companyId).ToListAsync();
 
             return Ok(data);
+        }       
+        
+        [HttpGet("getlookup")]
+        public async Task<IActionResult> GetLookup()
+        {
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.Lots.Where(x => x.CompanyId == companyId).Select(x=> new LotDto()
+            {
+                Id=x.Id,
+                Name = x.Name
+            }).ToListAsync();
+
+            return Ok(data);
         }
 
         [HttpPost("insertdto")]
