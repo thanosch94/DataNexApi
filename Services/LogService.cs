@@ -13,7 +13,9 @@ namespace DataNexApi.Services
             log.LogType = logType;
             log.LogOrigin = logOrigin;
             log.UserAdded = userId;
-
+            //TODO user may have more than one companies
+            var companyId = context.Users.FirstOrDefault(u => u.Id == userId)?.CompanyId;
+            log.CompanyId = companyId;
             context.Logs.Add(log);
 
             context.SaveChanges();

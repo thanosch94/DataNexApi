@@ -29,12 +29,13 @@ namespace DataNexApi.Controllers
                 DateAdded = x.DateAdded,
                 AddedDateTimeFormatted = x.DateAdded.ToString("yyyy/MM/dd HH:mm:ss"),
                 LogTypeName = x.LogType.GetDisplayName(),
-                LogOriginName = x.LogOrigin.GetDisplayName()
+                LogOriginName = x.LogOrigin.GetDisplayName(),
+                CompanyId =x.CompanyId,
                 
 
-            }).Where(x=>x.CompanyId==companyId).ToListAsync();
+            }).Where(x=>x.CompanyId==companyId).OrderByDescending(x => x.DateAdded).ToListAsync();
 
-            return Ok(data.OrderByDescending(x => x.DateAdded));
+            return Ok(data);
         }
     }
 }
