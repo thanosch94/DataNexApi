@@ -19,7 +19,7 @@ namespace DataNexApi.Controllers
         private IMapper _mapper;
         private static readonly object _lockObject = new object();
 
-        public DocumentProductsController(ApplicationDbContext context, IMapper mapper):base(context) 
+        public DocumentProductsController(ApplicationDbContext context, IMapper mapper) : base(context)
         {
             _context = context;
             _mapper = mapper;
@@ -69,7 +69,14 @@ namespace DataNexApi.Controllers
                 VatAmount = x.VatAmount,
                 TotalVatAmount = x.TotalVatAmount,
                 VatClassId = x.Product.VatClassId,
-                TotalPrice = x.TotalPrice
+                TotalPrice = x.TotalPrice,
+                DocumentProductLotsQuantities = x.DocumentProductLotsQuantities.Select(y => new DocumentProductLotQuantityDto()
+                {
+                    Id = Guid.NewGuid(),
+                    DocumentProductId = y.DocumentProductId,
+                    LotId = y.LotId,
+                    Quantity = y.Quantity,
+                }).ToList()
 
             }).AsSplitQuery().ToListAsync();
 
@@ -97,7 +104,12 @@ namespace DataNexApi.Controllers
             data.TotalPrice = documentProduct.TotalPrice;
             data.ProductSizeId = documentProduct.ProductSizeId;
             data.UserAdded = actionUser.Id;
-
+            data.DocumentProductLotsQuantities = documentProduct.DocumentProductLotsQuantities.Select(x => new DocumentProductLotQuantity()
+            {
+                LotId = x.LotId,
+                DocumentProductId = data.Id,
+                Quantity = x.Quantity,
+            }).ToList();
             lock (_lockObject)
             {
                 var maxNumber = _context.DocumentProducts.Max(x => (x.SerialNumber)) ?? 0;
@@ -105,17 +117,23 @@ namespace DataNexApi.Controllers
                 data.Code = data.SerialNumber.ToString().PadLeft(5, '0');
 
 
-            try
+                try
                 {
                     _context.DocumentProducts.Add(data);
 
                     _context.SaveChanges();
-                    LogMessage($"Document product inserted by \"{actionUser.UserName}\". Document product: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id);
+                    LogMessage($"Document product inserted by \"{actionUser.UserName}\". Document product: {JsonConvert.SerializeObject(data, new JsonSerializerSettings
+                    {
+                        ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+                    })}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id);
 
                 }
                 catch (Exception ex)
                 {
-                     LogMessage($"Document product could not be inserted by \"{actionUser.UserName}\". Document product: {JsonConvert.SerializeObject(data)}  Error:{ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id);
+                    LogMessage($"Document product could not be inserted by \"{actionUser.UserName}\". Document product: {JsonConvert.SerializeObject(data, new JsonSerializerSettings
+                    {
+                        ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+                    })}  Error:{ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id);
                     throw;
                 }
 
@@ -130,7 +148,7 @@ namespace DataNexApi.Controllers
         {
             var actionUser = await GetActionUser();
 
-            var data = await _context.DocumentProducts.FirstOrDefaultAsync(x => x.Id == documentProduct.Id);
+            var data = await _context.DocumentProducts.Include(x=>x.DocumentProductLotsQuantities).FirstOrDefaultAsync(x => x.Id == documentProduct.Id);
 
             data.DocumentId = documentProduct.DocumentId;
             data.ProductId = documentProduct.ProductId;
@@ -140,6 +158,21 @@ namespace DataNexApi.Controllers
             data.Quantity = documentProduct.Quantity;
             data.TotalPrice = documentProduct.TotalPrice;
             data.ProductSizeId = documentProduct.ProductSizeId;
+
+            if (data.DocumentProductLotsQuantities != null && data.DocumentProductLotsQuantities.Any())
+            {
+                _context.DocumentProductLotsQuantities.RemoveRange(data.DocumentProductLotsQuantities); 
+            }
+
+            data.DocumentProductLotsQuantities.Clear();
+
+            data.DocumentProductLotsQuantities = documentProduct.DocumentProductLotsQuantities.Select(x => new DocumentProductLotQuantity()
+            {
+                LotId = x.LotId,
+                DocumentProductId = data.Id,
+                Quantity = x.Quantity,
+            }).ToList();
+
 
             try
             {
@@ -195,7 +228,7 @@ namespace DataNexApi.Controllers
                 ProductId = x.ProductId,
                 ProductRetailPrice = x.Price,
                 VatAmount = x.VatAmount,
-                TotalVatAmount = x.TotalVatAmount, 
+                TotalVatAmount = x.TotalVatAmount,
                 Quantity = x.Quantity,
                 TotalPrice = x.TotalPrice,
                 ProductSizeId = x.ProductSizeId

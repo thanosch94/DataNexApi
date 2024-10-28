@@ -1,5 +1,5 @@
 Migration
-1. Add-Migration AddedLotSettings -Project DataNex.Data -context ApplicationDbContext -Args "--SqlServer"
+1. Add-Migration AddedDeleteBehaviorCascadeOnProductLotQuantity -Project DataNex.Data -context ApplicationDbContext -Args "--SqlServer"
 2. Update-Database -context MsSqlDbContext
 3. Script-Migration -i 0 -context ApplicationDbContext
 
@@ -16,14 +16,3 @@ MySQL
 
 
 
-//Controllers
-1. Must send context to BaseController -- :base(context)
-
-e.g.    public CustomersController(ApplicationDbContext context, IMapper mapper) : base(context)
-        {
-            _context = context;
-            _mapper = mapper;
-        }
-
-2. Insert Endpoints must have ExecuteTransaction which is inherited from BaseController in order to keep serial numbers unique for each entity without the risk of many users adding at the same time data in the table
-3. If in the method we have a try catch block throw; is necessary in order to rollback transaction
