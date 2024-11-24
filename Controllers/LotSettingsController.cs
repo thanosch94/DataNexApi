@@ -47,6 +47,7 @@ namespace DataNexApi.Controllers
             if (exists == null)
             {
                 data.LotStrategy = dto.LotStrategy;
+                data.LotStrategyApplyField = dto.LotStrategyApplyField;
                 data.UserAdded = actionUser.Id;
                 data.CompanyId = companyId;
 
@@ -88,6 +89,7 @@ namespace DataNexApi.Controllers
             var data = await _context.LotsSettings.Where(x => x.Id == dto.Id && x.CompanyId == companyId).FirstOrDefaultAsync();
 
             data.LotStrategy = dto.LotStrategy;
+            data.LotStrategyApplyField = dto.LotStrategyApplyField;
             data.CompanyId = companyId;
 
             try

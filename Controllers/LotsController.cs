@@ -48,6 +48,172 @@ namespace DataNexApi.Controllers
 
             return Ok(data);
         }
+                
+        
+        [HttpGet("getlookupbysupplierid/{supplierId}")]
+        public async Task<IActionResult> GetLookupBySupplierId(Guid supplierId)
+        {
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.Lots.Where(x => x.CompanyId == companyId && x.SupplierId == supplierId).Select(x=> new LotDto()
+            {
+                Id=x.Id,
+                Name = x.Name,
+                SupplierId = x.SupplierId
+            }).ToListAsync();
+
+            return Ok(data);
+        }
+                
+        
+        [HttpGet("getlookupbysupplieridandproductid/{supplierId}/{productId}")]
+        public async Task<IActionResult> GetLookupBySupplierIdAndProductId(Guid supplierId, Guid productId)
+        {
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.Lots.Where(x => x.CompanyId == companyId && x.SupplierId == supplierId).Select(x=> new LotDto()
+            {
+                Id=x.Id,
+                Name = x.Name,
+                SupplierId = x.SupplierId
+            }).ToListAsync();
+
+            return Ok(data);
+        }
+
+        [HttpGet("getlookupbyproductidwithremainingqty/{productId}")]
+        public async Task<IActionResult> GetLookupByProductIdWithRemainingQty(Guid productId)
+        {
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.Lots.Where(x => x.CompanyId == companyId && x.ProductId == productId && x.RemainingQty>0).Select(x=> new LotDto()
+            {
+                Id=x.Id,
+                Name = x.Name,
+                ProductId = x.ProductId
+            }).ToListAsync();
+
+            return Ok(data);
+        }
+        
+        [HttpGet("getlotqtiesonsalesdocbyproductqtyfifo/{productId}/{qty}")]
+        public async Task<IActionResult> GetLotQtiesOnSalesDocByProductQtyFIFO(Guid productId, int qty)
+        {
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.DocumentProductLotsQuantities.Include(x=>x.Lot)
+                .Where(x => x.Lot.ProductId == productId && x.Lot.RemainingQty>0 && x.DocumentProduct.Document.DocumentType.DocumentTypeGroup==DocumentTypeGroupEnum.Purchasing)
+                .ToListAsync();
+
+            var settings = await _context.LotsSettings.FirstOrDefaultAsync(x=>x.CompanyId==companyId);
+
+            if(settings.LotStrategyApplyField==LotStrategyApplyFieldEnum.ExpirationDate)
+            {
+                data = data.OrderBy(x => x.Lot.ExpDate).ToList();
+            }else if (settings.LotStrategyApplyField == LotStrategyApplyFieldEnum.ProductionDate)
+            {
+                data = data.OrderBy(x => x.Lot.ProdDate).ToList();
+            }else if (settings.LotStrategyApplyField == LotStrategyApplyFieldEnum.AddedDateTime)
+            {
+                data = data.OrderBy(x => x.Lot.DateAdded).ToList();
+            }
+
+            var documentProductLotsQuantities = new List<DocumentProductLotQuantityDto>();
+            foreach (var item in data)
+            {
+                var dto = new DocumentProductLotQuantityDto();
+                if (item.Lot.RemainingQty > qty)
+                {
+                    dto = new DocumentProductLotQuantityDto()
+                    {
+                        Quantity = qty,
+                        LotId = item.LotId,
+                    };
+                    qty = qty - qty;
+
+                }
+                else
+                {
+                    dto = new DocumentProductLotQuantityDto()
+                    {
+                        Quantity = item.Lot.RemainingQty,
+                        LotId = item.LotId,
+                    };
+                    qty=qty- item.Lot.RemainingQty;
+                }
+                documentProductLotsQuantities.Add(dto);
+
+                if (qty == 0)
+                {
+                    break;
+                }
+            
+            }
+            
+            return Ok(documentProductLotsQuantities);
+        } 
+
+        [HttpGet("getlotqtiesonsalesdocbyproductqtylifo/{productId}/{qty}")]
+        public async Task<IActionResult> GetLotQtiesOnSalesDocByProductQtyLIFO(Guid productId, int qty)
+        {
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.DocumentProductLotsQuantities.Include(x => x.Lot)
+                .Where(x => x.Lot.ProductId == productId && x.Lot.RemainingQty>0 && x.DocumentProduct.Document.DocumentType.DocumentTypeGroup==DocumentTypeGroupEnum.Purchasing)
+                .ToListAsync();
+
+
+            var settings = await _context.LotsSettings.FirstOrDefaultAsync(x => x.CompanyId == companyId);
+
+            if (settings.LotStrategyApplyField == LotStrategyApplyFieldEnum.ExpirationDate)
+            {
+                data = data.OrderByDescending(x => x.Lot.ExpDate).ToList();
+            }
+            else if (settings.LotStrategyApplyField == LotStrategyApplyFieldEnum.ProductionDate)
+            {
+                data = data.OrderByDescending(x => x.Lot.ProdDate).ToList();
+            }
+            else if (settings.LotStrategyApplyField == LotStrategyApplyFieldEnum.AddedDateTime)
+            {
+                data = data.OrderByDescending(x => x.Lot.DateAdded).ToList();
+            }
+
+
+            var documentProductLotsQuantities = new List<DocumentProductLotQuantityDto>();
+            foreach (var item in data)
+            {
+                var dto = new DocumentProductLotQuantityDto();
+                if (item.Lot.RemainingQty > qty)
+                {
+                    dto = new DocumentProductLotQuantityDto()
+                    {
+                        Quantity = qty,
+                        LotId = item.LotId,
+                    };
+                    qty = qty - qty;
+
+                }
+                else
+                {
+                    dto = new DocumentProductLotQuantityDto()
+                    {
+                        Quantity = item.Lot.RemainingQty,
+                        LotId = item.LotId,
+                    };
+                    qty=qty- item.Lot.RemainingQty;
+                }
+               
+               
+                    documentProductLotsQuantities.Add(dto);
+                if (qty == 0)
+                {
+                    break;
+                }
+
+            }
+            
+            return Ok(documentProductLotsQuantities);
+        }
 
         [HttpPost("insertdto")]
         public async Task<IActionResult> InsertDto([FromBody] LotDto dto)
@@ -63,9 +229,12 @@ namespace DataNexApi.Controllers
             if (exists == null)
             {
                 data.Name = dto.Name;
+                data.ProductId = dto.ProductId;
                 data.Notes = dto.Notes;
                 data.ProdDate = dto.ProdDate;   
                 data.ExpDate = dto.ExpDate;
+                data.SupplierId = dto.SupplierId;
+                data.RemainingQty = 0;
                 data.UserAdded = actionUser.Id;
                 data.CompanyId = companyId;
 
@@ -107,9 +276,11 @@ namespace DataNexApi.Controllers
             var data = await _context.Lots.Where(x => x.Id == dto.Id && x.CompanyId == companyId).FirstOrDefaultAsync();
 
             data.Name = dto.Name; 
+            data.ProductId = dto.ProductId;
             data.Notes = dto.Notes;
             data.ProdDate = dto.ProdDate;
             data.ExpDate = dto.ExpDate;
+            data.SupplierId = dto.SupplierId;
             data.UserAdded = actionUser.Id;
             data.CompanyId = companyId;
 

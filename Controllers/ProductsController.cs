@@ -101,7 +101,9 @@ namespace DataNexApi.Controllers
             var data = await _context.Products.Select(x => new ProductDto()
             {
                 Id = x.Id,
-                Name = x.Name
+                Name = x.Name,
+                Sku = x.Sku,
+                CompanyId = x.CompanyId
             }).Where(x => x.CompanyId == companyId).ToListAsync();
 
             return Ok(data);

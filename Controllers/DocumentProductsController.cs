@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using System.Reflection.Metadata;
 
 namespace DataNexApi.Controllers
 {
@@ -93,7 +94,7 @@ namespace DataNexApi.Controllers
         public async Task<IActionResult> InsertDto([FromBody] DocumentProductDto documentProduct)
         {
             var actionUser = await GetActionUser();
-
+            var success = true;
             var data = new DocumentProduct();
             data.DocumentId = documentProduct.DocumentId;
             data.ProductId = documentProduct.ProductId;
@@ -126,7 +127,6 @@ namespace DataNexApi.Controllers
                     {
                         ReferenceLoopHandling = ReferenceLoopHandling.Ignore
                     })}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id);
-
                 }
                 catch (Exception ex)
                 {
@@ -134,8 +134,31 @@ namespace DataNexApi.Controllers
                     {
                         ReferenceLoopHandling = ReferenceLoopHandling.Ignore
                     })}  Error:{ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id);
-                    throw;
                 }
+
+            }
+
+            var document = await _context.Documents.Include(x => x.DocumentType).AsSplitQuery().FirstOrDefaultAsync(x => x.Id == data.DocumentId);
+
+
+            if (success)
+            {
+                foreach (var lotQtyLine in data.DocumentProductLotsQuantities)
+                {
+                    var lot = await _context.Lots.FirstOrDefaultAsync(x => x.Id == lotQtyLine.LotId);
+                    if (document.DocumentType.DocumentTypeGroup == DocumentTypeGroupEnum.Purchasing)
+                    {
+                        lot.RemainingQty += lotQtyLine.Quantity;
+                    }
+                    else if (document.DocumentType.DocumentTypeGroup == DocumentTypeGroupEnum.Sales)
+                    {
+                        lot.RemainingQty -= lotQtyLine.Quantity;
+
+                    }
+                    _context.SaveChanges();
+
+                }
+
 
             }
             var dto = _mapper.Map<DocumentProductDto>(data);
@@ -148,7 +171,30 @@ namespace DataNexApi.Controllers
         {
             var actionUser = await GetActionUser();
 
-            var data = await _context.DocumentProducts.Include(x=>x.DocumentProductLotsQuantities).FirstOrDefaultAsync(x => x.Id == documentProduct.Id);
+            var data = await _context.DocumentProducts.Include(x => x.DocumentProductLotsQuantities).FirstOrDefaultAsync(x => x.Id == documentProduct.Id);
+            var document = await _context.Documents.Include(x => x.DocumentType).AsSplitQuery().FirstOrDefaultAsync(x => x.Id == data.DocumentId);
+
+            if (data.DocumentProductLotsQuantities != null && data.DocumentProductLotsQuantities.Any())
+            {
+                foreach (var lotQtyLine in data.DocumentProductLotsQuantities)
+                {
+                    var lot = await _context.Lots.FirstOrDefaultAsync(x => x.Id == lotQtyLine.LotId);
+                    if (document.DocumentType.DocumentTypeGroup == DocumentTypeGroupEnum.Purchasing)
+                    {
+                        lot.RemainingQty -= lotQtyLine.Quantity;
+                    }
+                    else if (document.DocumentType.DocumentTypeGroup == DocumentTypeGroupEnum.Sales)
+                    {
+                        lot.RemainingQty += lotQtyLine.Quantity;
+
+                    }
+                    _context.DocumentProductLotsQuantities.Remove(lotQtyLine);
+
+                }
+                await _context.SaveChangesAsync();
+
+            }
+
 
             data.DocumentId = documentProduct.DocumentId;
             data.ProductId = documentProduct.ProductId;
@@ -159,32 +205,50 @@ namespace DataNexApi.Controllers
             data.TotalPrice = documentProduct.TotalPrice;
             data.ProductSizeId = documentProduct.ProductSizeId;
 
-            if (data.DocumentProductLotsQuantities != null && data.DocumentProductLotsQuantities.Any())
-            {
-                _context.DocumentProductLotsQuantities.RemoveRange(data.DocumentProductLotsQuantities); 
-            }
-
-            data.DocumentProductLotsQuantities.Clear();
-
-            data.DocumentProductLotsQuantities = documentProduct.DocumentProductLotsQuantities.Select(x => new DocumentProductLotQuantity()
+           
+            var documentProductLotsQuantities = documentProduct.DocumentProductLotsQuantities.Select(x => new DocumentProductLotQuantity()
             {
                 LotId = x.LotId,
                 DocumentProductId = data.Id,
                 Quantity = x.Quantity,
             }).ToList();
 
+            _context.DocumentProductLotsQuantities.AddRange(documentProductLotsQuantities);
 
             try
             {
                 await _context.SaveChangesAsync();
-                LogMessage($"Document product updated by \"{actionUser.UserName}\". Document product: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id);
+                LogMessage($"Document product updated by \"{actionUser.UserName}\". Document product: {JsonConvert.SerializeObject(data, new JsonSerializerSettings
+                {
+                    ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+                })}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id);
 
             }
             catch (Exception ex)
             {
-                LogMessage($"Document product could not be updated by \"{actionUser.UserName}\". Document product: {JsonConvert.SerializeObject(data)}  Error:{ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id);
+                LogMessage($"Document product could not be updated by \"{actionUser.UserName}\". Document product: {JsonConvert.SerializeObject(data, new JsonSerializerSettings
+                {
+                    ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+                })}  Error:{ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id);
+            }
+
+            foreach (var lotQtyLine in data.DocumentProductLotsQuantities)
+            {
+                var lot = await _context.Lots.FirstOrDefaultAsync(x => x.Id == lotQtyLine.LotId);
+                if (document.DocumentType.DocumentTypeGroup == DocumentTypeGroupEnum.Purchasing)
+                {
+                    lot.RemainingQty += lotQtyLine.Quantity;
+                }
+                else if (document.DocumentType.DocumentTypeGroup == DocumentTypeGroupEnum.Sales)
+                {
+                    lot.RemainingQty -= lotQtyLine.Quantity;
+
+                }
+                _context.SaveChanges();
 
             }
+
+
 
             var dto = _mapper.Map<DocumentProductDto>(data);
 
