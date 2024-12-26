@@ -84,6 +84,7 @@ if (!app.Environment.IsDevelopment())
 
 }
 
+
 var origins = builder.Configuration["AllowedOrigins"].Split(";");
 
 if (origins.Length > 0 && !string.IsNullOrEmpty(origins[0]))

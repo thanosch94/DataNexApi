@@ -12,6 +12,10 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using DataNexApi.Services;
 using DataNex.Model.Enums;
+using DataNex.Model.Models;
+using Microsoft.AspNetCore.Http;
+using DataNex.Model.Dtos.TimeZone;
+using Newtonsoft.Json;
 
 namespace DataNexApi.Controllers
 {
@@ -54,6 +58,9 @@ namespace DataNexApi.Controllers
                 };
                 apiResponse.Success = success;
                 apiResponse.Result = userToReturn;
+
+                SetUserTimeZone(user);
+
                 return Ok(apiResponse);
 
             }
@@ -67,5 +74,14 @@ namespace DataNexApi.Controllers
         }
 
       
+        private void SetUserTimeZone(User user)
+        {
+            var offsetMinutes = GetUserTimeZone();
+
+            TimeZoneSettings.UserOffsetHours = -(offsetMinutes/60);
+
+        }
+
+
     }
 }

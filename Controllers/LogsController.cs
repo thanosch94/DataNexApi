@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using DataNex.Data;
 using DataNex.Model.Dtos;
+using DataNex.Model.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -26,16 +27,17 @@ namespace DataNexApi.Controllers
             {
                 Id = x.Id,
                 LogName = x.LogName,
-                DateAdded = x.DateAdded,
-                AddedDateTimeFormatted = x.DateAdded.ToString("yyyy/MM/dd HH:mm:ss"),
+                DateAdded = x.LocalDateAdded,
+                AddedDateTimeFormatted = x.DateAdded.ToString("dd/MM/yyyy HH:mm:ss"),
                 LogTypeName = x.LogType.GetDisplayName(),
                 LogOriginName = x.LogOrigin.GetDisplayName(),
                 CompanyId =x.CompanyId,
                 
 
-            }).Where(x=>x.CompanyId==companyId).OrderByDescending(x => x.DateAdded).ToListAsync();
+            }).Where(x=>x.CompanyId==companyId).ToListAsync();
 
-            return Ok(data);
+            var dataToReturn = data.OrderByDescending(x => x.DateAdded).ToList();
+            return Ok(dataToReturn);
         }
     }
 }

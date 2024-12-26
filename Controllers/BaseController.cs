@@ -41,8 +41,23 @@ namespace DataNexApi.Controllers
 
         }
 
-     
-    public async Task<User> GetActionUser()
+        public int GetUserTimeZone()
+        {
+            if (Request.Headers.TryGetValue("TimeZoneOffset", out var offset))//Offset received in minutes
+            {
+                int.TryParse(offset.ToString(), out var tz);
+                // Use the header value here
+                int timeZoneOffset = tz;
+                return timeZoneOffset;
+            }
+            else
+            {
+                return 0;
+            }
+
+        }
+
+        public async Task<User> GetActionUser()
         {
             string userData = User.Claims.FirstOrDefault().Value;
             var actionUser = new User();
