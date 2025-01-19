@@ -23,7 +23,6 @@ namespace DataNexApi.Controllers
             _context = context;
             _mapper = mapper;
         }
-
         [HttpGet("getall")]
         public async Task<IActionResult> GetAll()
         {

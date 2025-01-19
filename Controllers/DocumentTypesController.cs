@@ -36,6 +36,20 @@ namespace DataNexApi.Controllers
             return Ok(data);
         }
 
+        [HttpGet("getLookup")]
+        public async Task<IActionResult> GetLookup()
+        {
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.DocumentTypes.Where(x => x.CompanyId == companyId).Select(x=>new DocumentTypeDto()
+            {
+                Id=x.Id,
+                Name = x.Name,  
+            }).ToListAsync();
+
+            return Ok(data);
+        }
+
         [HttpGet("getactivedocumenttypeslookupbydocumententity/{documentTypeGroup}")]
         public async Task<IActionResult> GetActiveDocumentTypesLookupByDocumentTypeGroup(DocumentTypeGroupEnum documentTypeGroup)
         {

@@ -111,6 +111,8 @@ namespace DataNexApi.Controllers
                 DocumentProductId = data.Id,
                 Quantity = x.Quantity,
             }).ToList();
+
+
             lock (_lockObject)
             {
                 var maxNumber = _context.DocumentProducts.Max(x => (x.SerialNumber)) ?? 0;
@@ -137,8 +139,17 @@ namespace DataNexApi.Controllers
                 }
 
             }
-
             var document = await _context.Documents.Include(x => x.DocumentType).AsSplitQuery().FirstOrDefaultAsync(x => x.Id == data.DocumentId);
+
+
+            //Recalculate Document Total
+
+            var documentProducts = await _context.DocumentProducts.Where(x => x.DocumentId == documentProduct.DocumentId).ToListAsync();
+
+            document.DocumentTotal = documentProducts.Sum(x => x.TotalPrice);
+            _context.SaveChanges();
+
+
 
 
             if (success)
@@ -205,7 +216,7 @@ namespace DataNexApi.Controllers
             data.TotalPrice = documentProduct.TotalPrice;
             data.ProductSizeId = documentProduct.ProductSizeId;
 
-           
+
             var documentProductLotsQuantities = documentProduct.DocumentProductLotsQuantities.Select(x => new DocumentProductLotQuantity()
             {
                 LotId = x.LotId,
@@ -231,6 +242,16 @@ namespace DataNexApi.Controllers
                     ReferenceLoopHandling = ReferenceLoopHandling.Ignore
                 })}  Error:{ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id);
             }
+
+            //Recalculate Document Total
+
+            var documentProducts = await _context.DocumentProducts.Where(x => x.DocumentId == documentProduct.DocumentId).ToListAsync();
+
+            document.DocumentTotal = documentProducts.Sum(x => x.TotalPrice);
+            _context.SaveChanges();
+
+
+
 
             foreach (var lotQtyLine in data.DocumentProductLotsQuantities)
             {
