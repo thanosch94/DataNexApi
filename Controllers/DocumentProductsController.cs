@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System.Reflection.Metadata;
+using System.Xml.Linq;
 
 namespace DataNexApi.Controllers
 {
@@ -282,16 +283,35 @@ namespace DataNexApi.Controllers
             var actionUser = await GetActionUser();
 
             var data = await _context.DocumentProducts.FirstOrDefaultAsync(x => x.Id == id);
+
+            var lotQties = await _context.DocumentProductLotsQuantities.Where(x => x.DocumentProductId == id).ToListAsync();
             try
-            {
+            {       
+                _context.RemoveRange(lotQties);
                 _context.DocumentProducts.Remove(data);
                 await _context.SaveChangesAsync();
-                LogMessage($"Document Product deleted by \"{actionUser.UserName}\"  Document Product: {JsonConvert.SerializeObject(data)}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id);
+
+                //Recalculate Document Total
+
+                var documentProducts = await _context.DocumentProducts.Where(x => x.DocumentId == data.DocumentId).ToListAsync();
+                var document = await _context.Documents.Include(x => x.DocumentType).AsSplitQuery().FirstOrDefaultAsync(x => x.Id == data.DocumentId);
+
+                document.DocumentTotal = documentProducts.Sum(x => x.TotalPrice);
+                _context.SaveChanges();
+
+
+                LogMessage($"Document Product deleted by \"{actionUser.UserName}\"  Document Product: {JsonConvert.SerializeObject(data, new JsonSerializerSettings
+                {
+                    ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+                })}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id);
 
             }
             catch (Exception ex)
             {
-                LogMessage($"Document Product could not be deleted by \"{actionUser.UserName}\"  Document Product: {JsonConvert.SerializeObject(data)} Error:{ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id);
+                LogMessage($"Document Product could not be deleted by \"{actionUser.UserName}\"  Document Product: {JsonConvert.SerializeObject(data, new JsonSerializerSettings
+                {
+                    ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+                })} Error:{ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id);
             }
             return Ok(data);
         }

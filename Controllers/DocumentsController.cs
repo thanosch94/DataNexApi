@@ -38,6 +38,7 @@ namespace DataNexApi.Controllers
                 DocumentTypeId = x.DocumentTypeId,
                 DocumentTypeName = x.DocumentType.Name,
                 DocumentNumber = x.DocumentNumber,
+                VatClassId = x.VatClassId,
                 DocumentCode = x.DocumentType.Abbreviation + '-' + x.DocumentNumber.ToString().PadLeft(6, '0'),
                 DocumentStatusId = x.DocumentStatusId,
                 CustomerId = x.CustomerId,
@@ -84,6 +85,7 @@ namespace DataNexApi.Controllers
                 DocumentCode = x.DocumentCode,
                 DocumentTypeName = x.DocumentType.Abbreviation,
                 DocumentNumber = x.DocumentNumber,
+                VatClassId = x.VatClassId,
                 DocumentStatusId = x.DocumentStatusId,
                 DocumentStatusName = x.DocumentStatus.Name,
                 CustomerId = x.CustomerId,
@@ -133,6 +135,7 @@ namespace DataNexApi.Controllers
                 DocumentTypeId = x.DocumentTypeId,
                 DocumentTypeName = x.DocumentType.Name,
                 DocumentNumber = x.DocumentNumber,
+                VatClassId =x.VatClassId,
                 DocumentCode = x.DocumentCode,
                 DocumentStatusId = x.DocumentStatusId,
                 CustomerId = x.CustomerId,
@@ -197,6 +200,7 @@ namespace DataNexApi.Controllers
             data.SupplierId = document.SupplierId;
             data.DocumentStatusId = document.DocumentStatusId;
             data.DocumentTotal = document.DocumentTotal;
+            data.VatClassId = document.VatClassId;
             data.ShippingAddress = document.ShippingAddress;
             data.ShippingRegion = document.ShippingRegion;
             data.ShippingPostalCode = document.ShippingPostalCode;
@@ -284,6 +288,7 @@ namespace DataNexApi.Controllers
             data.DocumentDateTime = document.DocumentDateTime;
             data.DocumentStatusId = document.DocumentStatusId;
             data.DocumentTotal = document.DocumentTotal;
+            data.VatClassId = document.VatClassId;
             data.ShippingAddress = document.ShippingAddress;
             data.ShippingRegion = document.ShippingRegion;
             data.ShippingPostalCode = document.ShippingPostalCode;
