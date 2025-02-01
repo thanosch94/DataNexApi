@@ -37,6 +37,7 @@ namespace DataNexApi.Mapping
             CreateMap<LotSettings, LotSettingsDto>().ReverseMap();
             CreateMap<DocumentProductLotQuantity, DocumentProductLotQuantityDto>().ReverseMap();
             CreateMap<Category, CategoryDto>().ReverseMap();
+            CreateMap<Client, ClientDto>().ReverseMap();
         }
     }
 }
