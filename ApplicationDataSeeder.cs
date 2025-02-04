@@ -20,6 +20,7 @@ namespace DataNexApi
 
         private async Task SeedData(ApplicationDbContext context)
         {
+            await SeedRoles(context);
 
             await SeedCompanies(context);
             await SeedUsers(context);
@@ -30,6 +31,79 @@ namespace DataNexApi
             
 
             
+        }
+
+        public async Task SeedRoles(ApplicationDbContext context)
+        {
+            var roles = await context.Roles.ToListAsync();
+
+            if (!roles.Any(x=>x.Id==AppBase.DnAdminRoleId))
+            {
+                var roleToAdd = new Role()
+                {
+                    Id = AppBase.DnAdminRoleId,
+                    Name = "DnAdmin",
+                    NormalizedName = "DNADMIN",
+                    ConcurrencyStamp = Guid.NewGuid().ToString(),
+                    DateAdded = DateTime.Now,
+                    IsSeeded = true,
+                };
+
+                context.Roles.Add(roleToAdd);
+                context.SaveChanges();
+            }
+
+            if (!roles.Any(x => x.Id == AppBase.AdminRoleId))
+            {
+                var roleToAdd = new Role()
+                {
+                    Id = AppBase.AdminRoleId,
+                    Name = "Admin",
+                    NormalizedName = "ADMIN",
+                    ConcurrencyStamp = Guid.NewGuid().ToString(),
+                    DateAdded = DateTime.Now,
+                    IsSeeded = true,
+
+                };
+
+                context.Roles.Add(roleToAdd);
+                context.SaveChanges();
+            }
+
+            if (!roles.Any(x => x.Id == AppBase.SupervisorRoleId))
+            {
+                var roleToAdd = new Role()
+                {
+                    Id = AppBase.SupervisorRoleId,
+                    Name = "Supervisor",
+                    NormalizedName = "SUPERVISOR",
+                    ConcurrencyStamp = Guid.NewGuid().ToString(),
+                    DateAdded = DateTime.Now,
+                    IsSeeded = true,
+
+                };
+
+                context.Roles.Add(roleToAdd);
+                context.SaveChanges();
+            }
+
+            if (!roles.Any(x => x.Id == AppBase.UserRoleId))
+            {
+                var roleToAdd = new Role()
+                {
+                    Id = AppBase.UserRoleId,
+                    Name = "User",
+                    NormalizedName = "USER",
+                    ConcurrencyStamp = Guid.NewGuid().ToString(),
+                    DateAdded = DateTime.Now,
+                    IsSeeded = true,
+
+                };
+
+                context.Roles.Add(roleToAdd);
+                context.SaveChanges();
+            }
+
         }
 
         public async Task SeedUsers(ApplicationDbContext context)
@@ -49,6 +123,23 @@ namespace DataNexApi
                 };
 
                 context.Users.Add(userToAdd);
+                context.SaveChanges();
+            }
+
+
+            //Set DnAdmin User Role
+
+            var dnADminUserRole = await context.UserRoles.FirstOrDefaultAsync(x => x.RoleId == AppBase.DnAdminRoleId && x.UserId == AppBase.DnAdmin);
+
+            if(dnADminUserRole == null)
+            {
+                var userRoleToAdd = new UserRole()
+                {
+                    UserId = AppBase.DnAdmin,
+                    RoleId = AppBase.DnAdminRoleId,
+                };
+
+                context.UserRoles.Add(userRoleToAdd);
                 context.SaveChanges();
             }
         }
