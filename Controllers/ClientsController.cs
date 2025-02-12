@@ -14,13 +14,15 @@ namespace DataNexApi.Controllers
     [Authorize]
     public class ClientsController:BaseController
     {
-        private ApplicationDbContext _context;
+        private CoreDbContext _context;
+        private ApplicationDbContext _appContext;
         private IMapper _mapper;
         private static readonly object _lockObject = new object();
 
-        public ClientsController(ApplicationDbContext context, IMapper mapper) : base(context)
+        public ClientsController(CoreDbContext context, ApplicationDbContext appContext, IMapper mapper) : base(appContext)
         {
             _context = context;
+            _appContext = appContext;
             _mapper = mapper;
         }
 
@@ -82,12 +84,12 @@ namespace DataNexApi.Controllers
                 {
                     _context.Clients.Add(data);
                     _context.SaveChanges();
-                    LogService.CreateLog($"Client \"{data.Name}\" inserted by \"{actionUser.UserName}\". Client: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                    LogService.CreateLog($"Client \"{data.Name}\" inserted by \"{actionUser.UserName}\". Client: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _appContext);
 
                 }
                 catch (Exception ex)
                 {
-                    LogService.CreateLog($"Client \"{data.Name}\" could not be inserted by \"{actionUser.UserName}\" Client: {JsonConvert.SerializeObject(data)} Error:{ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                    LogService.CreateLog($"Client \"{data.Name}\" could not be inserted by \"{actionUser.UserName}\" Client: {JsonConvert.SerializeObject(data)} Error:{ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _appContext);
                     throw;
                 }
             };
@@ -116,12 +118,12 @@ namespace DataNexApi.Controllers
             try
             {
                 await _context.SaveChangesAsync();
-                LogService.CreateLog($"Client \"{data.Name}\" updated by \"{actionUser.UserName}\". Client: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                LogService.CreateLog($"Client \"{data.Name}\" updated by \"{actionUser.UserName}\". Client: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _appContext);
 
             }
             catch (Exception ex)
             {
-                LogService.CreateLog($"Client \"{data.Name}\" could not be updated by \"{actionUser.UserName}\" Error:{ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                LogService.CreateLog($"Client \"{data.Name}\" could not be updated by \"{actionUser.UserName}\" Error:{ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _appContext);
 
             }
 
@@ -142,12 +144,12 @@ namespace DataNexApi.Controllers
             {
                 _context.Clients.Remove(data);
                 await _context.SaveChangesAsync();
-                LogService.CreateLog($"Client \"{data.Name}\" deleted by \"{actionUser.UserName}\"  Client: {JsonConvert.SerializeObject(data)}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                LogService.CreateLog($"Client \"{data.Name}\" deleted by \"{actionUser.UserName}\"  Client: {JsonConvert.SerializeObject(data)}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _appContext);
 
             }
             catch (Exception ex)
             {
-                LogService.CreateLog($"Client \"{data.Name}\" could not be deleted by \"{actionUser.UserName}\"  Client: {JsonConvert.SerializeObject(data)} Error:{ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                LogService.CreateLog($"Client \"{data.Name}\" could not be deleted by \"{actionUser.UserName}\"  Client: {JsonConvert.SerializeObject(data)} Error:{ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _appContext);
             }
 
             return Ok(data);

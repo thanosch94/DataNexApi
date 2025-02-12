@@ -68,9 +68,12 @@ namespace DataNexApi.Controllers
 
         protected void LogMessage(string message, LogTypeEnum logType, LogOriginEnum logOrigin, Guid? userId)
         {
-           
-                LogService.CreateLog(message, logType,logOrigin, userId, _context);
-            
+           using(var context = new ApplicationDbContext(AppBase.ConnectionString))
+            {
+                LogService.CreateLog(message, logType, logOrigin, userId, context);
+
+            }
+
 
         }
     }

@@ -18,10 +18,10 @@ namespace DataNexApi.Services
             var signinCredentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
 
             var userRoleName = string.Empty;
-            using ( var context = new ApplicationDbContext(AppBase.ConnectionString) )
+            using (var context = new ApplicationDbContext(AppBase.ConnectionString))
             {
-                var userRole= context.UserRoles.Where(x=>x.UserId==user.Id).FirstOrDefault();
-                if(userRole!=null)
+                var userRole = context.UserRoles.Where(x => x.UserId == user.Id).FirstOrDefault();
+                if (userRole != null)
                 {
                     var role = context.Roles.Where(x => x.Id == userRole.RoleId).FirstOrDefault();
                     userRoleName = role.Name;
@@ -32,8 +32,11 @@ namespace DataNexApi.Services
                 audience: "http://localhost:5000",
                 claims: new List<Claim>()
                 {
-                       new Claim(ClaimTypes.UserData, JsonConvert.SerializeObject(user)),
-                       new Claim(ClaimTypes.Role, userRoleName)
+                       new Claim(ClaimTypes.UserData, JsonConvert.SerializeObject(user,new JsonSerializerSettings()
+                        {
+                            ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+                        })),
+                       new Claim(ClaimTypes.Role, userRoleName),
 
                 },
                 expires: DateTime.Now.AddHours(8),

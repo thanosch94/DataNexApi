@@ -9,6 +9,8 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Configuration;
 using Newtonsoft.Json;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,20 +21,81 @@ builder.Services.AddControllers().AddJsonOptions(options =>
      options.JsonSerializerOptions.PropertyNamingPolicy = null;
  });
 builder.Services.AddCors();
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
+
+
+builder.Services.AddDbContext<CoreDbContext>(options =>
 {
     var provider = builder.Configuration.GetSection("Provider").Value;
     if (provider == "MsSQL")
     {
-        options.UseSqlServer(builder.Configuration.GetConnectionString("DbConnection"), x => x.MigrationsAssembly("DataNex.Data"));
+        options.UseSqlServer(builder.Configuration.GetConnectionString("CoreDbConnection"), x => x.MigrationsAssembly("DataNex.Data"));
         options.UseSqlServer(x => x.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
-        AppBase.ConnectionString =builder.Configuration.GetConnectionString("DbConnection");
+        AppBase.CoreConnectionString = builder.Configuration.GetConnectionString("CoreDbConnection");
+        AppBase.ClientConnectionString = builder.Configuration.GetConnectionString("ClientDbConnection");
+        AppBase.MasterConnectionString = builder.Configuration.GetConnectionString("MSSQLMasterConnection");
+
     }
     else if (provider == "MySQL")
     {
         options.UseMySql(builder.Configuration.GetConnectionString("MySqlConnection"), ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("MySqlConnection")));
     }
 });
+
+
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+{
+    var provider = builder.Configuration.GetSection("Provider").Value;
+    if (provider == "MsSQL")
+    {
+        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultClientConnection"), sqlOptions =>
+       sqlOptions.MigrationsAssembly("DataNex.Data"));
+
+
+    }
+    else if (provider == "MySQL")
+    {
+
+    }
+});
+
+builder.Services.AddScoped<ApplicationDbContext>(serviceProvider =>
+    {
+        var httpContext = serviceProvider.GetService<IHttpContextAccessor>()?.HttpContext;
+        var defaultOptionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
+
+        if (httpContext == null)
+        {
+            AppBase.ConnectionString = builder.Configuration.GetConnectionString("ClientDbConnection");
+            AppBase.ClientConnectionString = builder.Configuration.GetConnectionString("ClientDbConnection");
+            var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
+            optionsBuilder.UseSqlServer(builder.Configuration.GetConnectionString("DefaultClientConnection"), sqlOptions =>
+                sqlOptions.MigrationsAssembly("DataNex.Data"));
+
+            return new ApplicationDbContext(optionsBuilder.Options);
+
+
+        }
+        else
+        {
+            var companyCode = string.Empty;
+            if (httpContext.Request.Headers.TryGetValue("CompanyCode", out var code))
+            {
+                companyCode = code.ToString();
+            }
+
+            var customerConnectionString = builder.Configuration.GetConnectionString("ClientDbConnection");
+            customerConnectionString = customerConnectionString?.Replace("{clientDbName}", companyCode);
+            AppBase.ConnectionString = customerConnectionString;
+
+            var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
+            optionsBuilder.UseSqlServer(customerConnectionString, sqlOptions =>
+                sqlOptions.MigrationsAssembly("DataNex.Data"));
+            return new ApplicationDbContext(optionsBuilder.Options);
+        }
+        
+    });
+
+
 
 
 builder.Services.AddIdentity<User, Role>()
@@ -76,9 +139,9 @@ builder.Services.AddAutoMapper(typeof(Program));
 // Add services to the container.
 var app = builder.Build();
 
-//Seed data on Startup
-var applicationDataSeeder = new ApplicationDataSeeder();
-await applicationDataSeeder.Seed(app.Services);
+//Seed data on Startup --Not needed anymore. Data Seed is executed when db is created. 
+//var applicationDataSeeder = new ApplicationDataSeeder();
+//await applicationDataSeeder.SeedData(app.Services);
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
