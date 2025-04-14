@@ -1,23 +1,13 @@
 ﻿using AutoMapper;
 using DataNex.Data;
 using DataNex.Model.Dtos;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication;
+using DataNex.Model.Enums;
+using DataNex.Model.Models;
+using DataNexApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Text;
-using DataNexApi.Services;
-using DataNex.Model.Enums;
-using DataNex.Model.Models;
-using Microsoft.AspNetCore.Http;
-using DataNex.Model.Dtos.TimeZone;
-using Newtonsoft.Json;
-using System;
-using System.Xml.Linq;
+
 
 namespace DataNexApi.Controllers
 {
@@ -49,12 +39,29 @@ namespace DataNexApi.Controllers
                 //Check if a connection can be established using the above connection string
                 if (context.Database.CanConnect())
                 {
+                    //Update Client Database if any migration
+                    var dbHelper = new DataBaseHelper();
+                    await dbHelper.UpdateDatabase(context);
                     //Check if the user exists searching by the username
                     var user = await context.Users.Where(x => x.UserName == dto.UserName).FirstOrDefaultAsync();
                     if (user != null && dto.Password != null)
                     {
-                        //If password matches then the login is successful
-                        success = BCrypt.Net.BCrypt.EnhancedVerify(dto.Password, user.PasswordHash);
+                        if(user.PasswordHash != null) 
+                        {
+                            //If password matches then the login is successful
+                            success = BCrypt.Net.BCrypt.EnhancedVerify(dto.Password, user.PasswordHash);
+
+                        }
+                        else
+                        {
+                            return BadRequest("User password has not been defined. Please contact your administrator.");
+                        }
+
+                        if (!user.IsActive)
+                        {
+                            return BadRequest("User is not active. Please contact your administrator.");
+
+                        }
                     }
 
                     if (success)
@@ -72,8 +79,8 @@ namespace DataNexApi.Controllers
                                 Name = user.Name,
                                 Email = user.Email,
                                 UserName = user.UserName,
-                                UserRole = user.UserRole,
                                 Company = companyDto,
+                                UserRoleId = context.UserRoles.FirstOrDefault(x => x.UserId == user.Id)?.RoleId,
                                 Token = TokenService.GenerateToken(user)
                             };
                             apiResponse.Success = success;
@@ -93,12 +100,10 @@ namespace DataNexApi.Controllers
                 }
                 else
                 {
-                    return BadRequest("Cannot connect to database. Contact your adminstrator");
+                    return BadRequest("Cannot connect to database. Please contact your adminstrator");
                 }
 
             }
-
-
 
         }
 
@@ -106,30 +111,41 @@ namespace DataNexApi.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto dto)
         {
+            var apiResponse = new ApiResponseDto();
+
             using (var transaction = _coreContext.Database.BeginTransaction())
             {
                 try
                 {
+                    //Add new client in core database
                     var client = AddNewClient(dto);
 
+                    //Create the new database and seed initial data
                     await CreateClientDataBase(dto.CompanyLoginCode);
 
+                    //Create the new company in the client's database
                     AddNewCompany(dto, client);
 
-                    //When client database and new company inserted successfully we commit the transaction 
+                    //When all actions complete successfully we commit the transaction 
                     transaction.Commit();
+                    apiResponse.Success = true;
+                    return Ok(apiResponse);
+
                 }
                 catch (Exception ex)
                 {
                     transaction.Rollback();
+                    apiResponse.Success = false;
+                    apiResponse.Message = ex.Message;
+                    return BadRequest(apiResponse);
+
+
                 }
 
             }
 
 
-            var apiResponse = new ApiResponseDto();
 
-            return Ok(apiResponse);
         }
 
 
@@ -166,7 +182,7 @@ namespace DataNexApi.Controllers
         {
             try
             {
-   
+
                 var dbHelper = new DataBaseHelper();
                 await dbHelper.CreateDatabase(companyCode);
 

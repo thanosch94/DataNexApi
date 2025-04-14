@@ -42,7 +42,11 @@ namespace DataNexApi.Controllers
 
             var data = await _context.Users.Where(x=>x.Id == id && x.CompanyId == companyId).FirstOrDefaultAsync();
 
-            return Ok(data);
+            var dto = _mapper.Map<UserDto>(data);
+            var userRole = _context.UserRoles.FirstOrDefault(x => x.UserId == dto.Id);
+            dto.UserRoleId = userRole?.RoleId;
+            dto.IsPasswordSet = data?.PasswordHash != null;
+            return Ok(dto);
         }
 
         [HttpPost("insertdto")]
@@ -60,10 +64,31 @@ namespace DataNexApi.Controllers
                 data.Name = dto.Name;
                 data.Email = dto.Email;
                 data.UserName = dto.UserName;
-                data.UserRole = dto.UserRole;
-                data.PasswordHash = BCrypt.Net.BCrypt.EnhancedHashPassword(dto.Password);
+                data.Image= dto.Image;
+                data.Country = dto.Country;
+                data.City = dto.City;
+                data.PostalCode = dto.PostalCode;
+                data.Address = dto.Address;
+                data.Phone1 = dto.Phone1;
+                data.Phone2 = dto.Phone2;
+                data.Notes = dto.Notes;
+                data.Occupation = dto.Occupation;
+                data.FacebookUrl = dto.FacebookUrl;
+                data.InstagramUrl = dto.InstagramUrl;
+                data.LinkedInUrl = dto.LinkedInUrl;
                 data.UserAdded = actionUser.Id;
                 data.CompanyId = companyId;
+                data.IsActive = dto.IsActive;
+
+                if (dto.BirthDay != null)
+                {
+                    data.BirthDay = dto.BirthDay.GetValueOrDefault().ToLocalTime();
+
+                }
+                if (dto.Password != null)
+                {
+                    data.PasswordHash = BCrypt.Net.BCrypt.EnhancedHashPassword(dto.Password);
+                }
 
                 lock (_lockObject)
                 {
@@ -77,6 +102,7 @@ namespace DataNexApi.Controllers
                         _context.SaveChanges();
                         LogService.CreateLog($"User \"{data.Name}\" inserted by \"{actionUser.UserName}\". User: {data.Id}, {data.Name}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
+                        AddUserRole(data.Id, (Guid)dto.UserRoleId, _context);
                     }
                     catch (Exception ex)
                     {
@@ -87,6 +113,10 @@ namespace DataNexApi.Controllers
 
                 var dtoData = _mapper.Map<UserDto>(data);
 
+                if (data.PasswordHash != null)
+                {
+                    dtoData.IsPasswordSet = true;
+                }
                 return Ok(dtoData);
             }
             else
@@ -108,18 +138,41 @@ namespace DataNexApi.Controllers
             data.Name = dto.Name;
             data.Email = dto.Email;
             data.UserName = dto.UserName;
-            data.UserRole = dto.UserRole;
+            data.Image = dto.Image;
+            data.Country = dto.Country;
+            data.City = dto.City;
+            data.PostalCode = dto.PostalCode;
+            data.Address = dto.Address;
+            data.Phone1 = dto.Phone1;
+            data.Phone2 = dto.Phone2;
+            data.Notes = dto.Notes;
+            data.Occupation = dto.Occupation;
+            data.FacebookUrl = dto.FacebookUrl;
+            data.InstagramUrl = dto.InstagramUrl;
+            data.LinkedInUrl = dto.LinkedInUrl;
             data.CompanyId = companyId;
+            data.IsActive = dto.IsActive;
+
+            if(dto.BirthDay != null)
+            {
+                data.BirthDay = dto.BirthDay.GetValueOrDefault().ToLocalTime();
+
+            }
 
             if (dto.Password!=null)
             {
                 data.PasswordHash = BCrypt.Net.BCrypt.EnhancedHashPassword(dto.Password);
             }
 
+
             try
             {
                 await _context.SaveChangesAsync();
                 LogService.CreateLog($"User \"{data.Name}\" updated by \"{actionUser.UserName}\". User: {data.Id}, {data.Name}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+
+                UpdateUserRole(data.Id, (Guid)dto.UserRoleId, _context);
+
+               
 
             }
             catch (Exception ex)
@@ -129,6 +182,47 @@ namespace DataNexApi.Controllers
             }
 
             var dtoData = _mapper.Map<UserDto>(data);
+
+            if (data.PasswordHash != null)
+            {
+                dtoData.IsPasswordSet = true;
+            }
+
+            return Ok(dtoData);
+
+        }
+
+        [HttpPut("updatePassword")]
+        public async Task<IActionResult> UpdatePassword([FromBody] UserDto dto)
+        {
+            Guid companyId = GetCompanyFromHeader();
+
+            var actionUser = await GetActionUser();
+
+            var data = await _context.Users.Where(x => x.Id == dto.Id && x.CompanyId == companyId).FirstOrDefaultAsync();
+
+           
+            if (dto.Password != null)
+            {
+                data.PasswordHash = BCrypt.Net.BCrypt.EnhancedHashPassword(dto.Password);
+            }
+
+            try
+            {
+                await _context.SaveChangesAsync();
+                LogService.CreateLog($"User \"{data.Name}\" updated by \"{actionUser.UserName}\". User: {data.Id}, {data.Name}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+            }
+            catch (Exception ex)
+            {
+                LogService.CreateLog($"User \"{data.Name}\" could not be updated by \"{actionUser.UserName}\"  User: {data.Id}, {data.Name} Error: {ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+
+            }
+            var dtoData = _mapper.Map<UserDto>(data);
+
+            if (data.PasswordHash != null)
+            {
+                dtoData.IsPasswordSet = true;
+            }
 
             return Ok(dtoData);
 
@@ -157,6 +251,24 @@ namespace DataNexApi.Controllers
 
             }
             return Ok(data);
+        }
+
+        private void AddUserRole(Guid userId, Guid roleId, ApplicationDbContext context)
+        {
+            var data = new UserRole();
+            data.UserId = userId;
+            data.RoleId = roleId;
+            context.Add(data);
+            context.SaveChanges();
+        }        
+        private void UpdateUserRole(Guid userId, Guid roleId, ApplicationDbContext context)
+        {
+            var userRole = _context.UserRoles.FirstOrDefault(x => x.UserId == userId);
+            if (roleId != userRole?.RoleId)
+            {
+                userRole.RoleId = roleId;
+                context.SaveChanges();
+            }
         }
     }
 }

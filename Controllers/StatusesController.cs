@@ -34,6 +34,19 @@ namespace DataNexApi.Controllers
             return Ok(data);
         }
 
+        [HttpGet("getallByStatusType/{statusType}")]
+        public async Task<IActionResult> GetAllByStatusType(StatusTypeEnum statusType)
+        {
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.Statuses.Where(x => x.CompanyId == companyId && x.StatusType==statusType).ToListAsync();
+
+            return Ok(data);
+        }
+        
+  
+
+
         [HttpPost("insertdto")]
         public async Task<IActionResult> InsertDto([FromBody] StatusDto status)
         {
@@ -47,12 +60,13 @@ namespace DataNexApi.Controllers
             if (exists == null)
             {
                 data.Name = status.Name;
+                data.StatusType = status.StatusType;
                 data.UserAdded = actionUser.Id;
                 data.CompanyId = companyId;
 
                 lock (_lockObject)
                 {
-                    var maxNumber = _context.Statuses.Where(x => x.CompanyId == companyId).Max(x => (x.SerialNumber)) ?? 0;
+                    var maxNumber = _context.Statuses.Where(x => x.CompanyId == companyId && x.StatusType ==status.StatusType).Max(x => (x.SerialNumber)) ?? 0;
                     data.SerialNumber = maxNumber + 1;
                     data.Code = data.SerialNumber.ToString().PadLeft(5, '0');
 
@@ -88,6 +102,7 @@ namespace DataNexApi.Controllers
             var data = await _context.Statuses.Where(x => x.Id == status.Id && x.CompanyId == companyId).FirstOrDefaultAsync();
 
             data.Name = status.Name;
+            data.StatusType = status.StatusType;
             data.CompanyId = companyId;
 
             try
