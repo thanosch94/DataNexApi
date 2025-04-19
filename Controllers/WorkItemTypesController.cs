@@ -48,7 +48,7 @@ namespace DataNexApi.Controllers
 
 
         [HttpPost("insertdto")]
-        public async Task<IActionResult> InsertDto([FromBody] WorkItemTypeDto workItemType)
+        public async Task<IActionResult> InsertDto([FromBody] WorkItemTypeDto dto)
         {
             Guid companyId = GetCompanyFromHeader();
 
@@ -56,17 +56,20 @@ namespace DataNexApi.Controllers
 
             var data = new WorkItemType();
 
-            var exists = await _context.WorkItemTypes.Where(x => x.Name == workItemType.Name && x.Category == workItemType.Category && x.CompanyId == companyId).FirstOrDefaultAsync();
+            var exists = await _context.WorkItemTypes.Where(x => x.Name == dto.Name && x.Category == dto.Category && x.CompanyId == companyId).FirstOrDefaultAsync();
             if (exists == null)
             {
-                data.Name = workItemType.Name;
-                data.Category = workItemType.Category;
+                data.Name = dto.Name;
+                data.Category = dto.Category;
+                data.Icon = dto.Icon;
+                data.IconColor = dto.IconColor;
+                data.IsDefault = dto.IsDefault;
                 data.UserAdded = actionUser.Id;
                 data.CompanyId = companyId;
 
                 lock (_lockObject)
                 {
-                    var maxNumber = _context.WorkItemTypes.Where(x => x.CompanyId == companyId && x.Category == workItemType.Category).Max(x => (x.SerialNumber)) ?? 0;
+                    var maxNumber = _context.WorkItemTypes.Where(x => x.CompanyId == companyId && x.Category == dto.Category).Max(x => (x.SerialNumber)) ?? 0;
                     data.SerialNumber = maxNumber + 1;
                     data.Code = data.SerialNumber.ToString().PadLeft(5, '0');
 
@@ -93,16 +96,19 @@ namespace DataNexApi.Controllers
         }
 
         [HttpPut("updatedto")]
-        public async Task<IActionResult> UpdateDto([FromBody] WorkItemTypeDto workItemType)
+        public async Task<IActionResult> UpdateDto([FromBody] WorkItemTypeDto dto)
         {
             Guid companyId = GetCompanyFromHeader();
 
             var actionUser = await GetActionUser();
 
-            var data = await _context.WorkItemTypes.Where(x => x.Id == workItemType.Id && x.CompanyId == companyId).FirstOrDefaultAsync();
+            var data = await _context.WorkItemTypes.Where(x => x.Id == dto.Id && x.CompanyId == companyId).FirstOrDefaultAsync();
 
-            data.Name = workItemType.Name;
-            data.Category = workItemType.Category;
+            data.Name = dto.Name;
+            data.Category = dto.Category;
+            data.Icon = dto.Icon;
+            data.IconColor = dto.IconColor;
+            data.IsDefault = dto.IsDefault;
             data.CompanyId = companyId;
 
             try

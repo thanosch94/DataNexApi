@@ -29,7 +29,7 @@ namespace DataNexApi.Controllers
         {
             Guid companyId = GetCompanyFromHeader();
 
-            var data = await _context.Statuses.Where(x=>x.CompanyId==companyId).ToListAsync();
+            var data = await _context.Statuses.Where(x=>x.CompanyId==companyId).OrderBy(x => x.Order ?? short.MaxValue).ToListAsync();
 
             return Ok(data);
         }
@@ -39,7 +39,7 @@ namespace DataNexApi.Controllers
         {
             Guid companyId = GetCompanyFromHeader();
 
-            var data = await _context.Statuses.Where(x => x.CompanyId == companyId && x.StatusType==statusType).ToListAsync();
+            var data = await _context.Statuses.Where(x => x.CompanyId == companyId && x.StatusType==statusType).OrderBy(x=>x.Order?? short.MaxValue).ToListAsync();
 
             return Ok(data);
         }
@@ -48,7 +48,7 @@ namespace DataNexApi.Controllers
 
 
         [HttpPost("insertdto")]
-        public async Task<IActionResult> InsertDto([FromBody] StatusDto status)
+        public async Task<IActionResult> InsertDto([FromBody] StatusDto dto)
         {
             Guid companyId = GetCompanyFromHeader();
 
@@ -56,17 +56,21 @@ namespace DataNexApi.Controllers
 
             var data = new Status();
 
-            var exists = await _context.Statuses.Where(x => x.Name == status.Name && x.CompanyId == companyId).FirstOrDefaultAsync();
+            var exists = await _context.Statuses.Where(x => x.Name == dto.Name && x.CompanyId == companyId).FirstOrDefaultAsync();
             if (exists == null)
             {
-                data.Name = status.Name;
-                data.StatusType = status.StatusType;
+                data.Name = dto.Name;
+                data.StatusType = dto.StatusType;
+                data.Icon = dto.Icon;
+                data.IconColor = dto.IconColor;
+                data.Order = dto.Order;
+                data.IsDefault = dto.IsDefault;
                 data.UserAdded = actionUser.Id;
                 data.CompanyId = companyId;
 
                 lock (_lockObject)
                 {
-                    var maxNumber = _context.Statuses.Where(x => x.CompanyId == companyId && x.StatusType ==status.StatusType).Max(x => (x.SerialNumber)) ?? 0;
+                    var maxNumber = _context.Statuses.Where(x => x.CompanyId == companyId && x.StatusType == dto.StatusType).Max(x => (x.SerialNumber)) ?? 0;
                     data.SerialNumber = maxNumber + 1;
                     data.Code = data.SerialNumber.ToString().PadLeft(5, '0');
 
@@ -93,16 +97,20 @@ namespace DataNexApi.Controllers
         }
 
         [HttpPut("updatedto")]
-        public async Task<IActionResult> UpdateDto([FromBody] StatusDto status)
+        public async Task<IActionResult> UpdateDto([FromBody] StatusDto dto)
         {
             Guid companyId = GetCompanyFromHeader();
 
             var actionUser = await GetActionUser();
 
-            var data = await _context.Statuses.Where(x => x.Id == status.Id && x.CompanyId == companyId).FirstOrDefaultAsync();
+            var data = await _context.Statuses.Where(x => x.Id == dto.Id && x.CompanyId == companyId).FirstOrDefaultAsync();
 
-            data.Name = status.Name;
-            data.StatusType = status.StatusType;
+            data.Name = dto.Name;
+            data.StatusType = dto.StatusType;
+            data.Icon = dto.Icon;
+            data.IconColor = dto.IconColor;
+            data.Order = dto.Order;
+            data.IsDefault = dto.IsDefault;
             data.CompanyId = companyId;
 
             try

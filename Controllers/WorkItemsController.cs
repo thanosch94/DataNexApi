@@ -31,7 +31,8 @@ namespace DataNexApi.Controllers
 
             var data = await _context.WorkItems.Where(x => x.CompanyId == companyId).ToListAsync();
 
-            return Ok(data);
+            var dto = _mapper.Map<WorkItemDto[]>(data);
+            return Ok(dto);
         }
 
 
@@ -41,8 +42,21 @@ namespace DataNexApi.Controllers
             Guid companyId = GetCompanyFromHeader();
 
             var data = await _context.WorkItems.Where(x => x.CompanyId == companyId && x.WorkItemCategory == workItemCategoryId).ToListAsync();
+            var dto = _mapper.Map<WorkItemDto[]>(data);
 
-            return Ok(data);
+            return Ok(dto);
+        }
+
+        
+        [HttpGet("getallByUserId/{userId}")]
+        public async Task<IActionResult> GetallByUserId(Guid userId)
+        {
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.WorkItems.Where(x => x.CompanyId == companyId && x.AssigneeId == userId).ToListAsync();
+            var dto = _mapper.Map<WorkItemDto[]>(data);
+
+            return Ok(dto);
         }
 
 
@@ -53,8 +67,9 @@ namespace DataNexApi.Controllers
             Guid companyId = GetCompanyFromHeader();
 
             var data = await _context.WorkItems.Where(x => x.CompanyId == companyId && x.Id == id).FirstOrDefaultAsync();
+            var dto = _mapper.Map<WorkItemDto>(data);
 
-            return Ok(data);
+            return Ok(dto);
         }
 
         [HttpPost("insertdto")]
@@ -106,7 +121,9 @@ namespace DataNexApi.Controllers
                         throw;
                     }
                 };
-                return Ok(data);
+                var dataToReturn = _mapper.Map<WorkItemDto>(data);
+
+                return Ok(dataToReturn);
             }
             else
             {
@@ -154,8 +171,9 @@ namespace DataNexApi.Controllers
                 })} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
             }
+            var dataToReturn = _mapper.Map<WorkItemDto>(data);
 
-            return Ok(data);
+            return Ok(dataToReturn);
 
         }
 
@@ -182,7 +200,9 @@ namespace DataNexApi.Controllers
             {
                 LogService.CreateLog($"Work Item \"{data.Name}\" could not be deleted by \"{actionUser.UserName}\". Work Item: {JsonConvert.SerializeObject(data)} Error: {ex.Message}", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
             }
-            return Ok(data);
+            var dataToReturn = _mapper.Map<WorkItemDto>(data);
+
+            return Ok(dataToReturn);
         }
     }
 }
