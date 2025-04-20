@@ -93,6 +93,7 @@ namespace DataNexApi.Controllers
                 data.WorkItemCategory = dto.WorkItemCategory;
                 data.SprintId = dto.SprintId;
                 data.DueDate = dto.DueDate;
+                data.WorkItemPriority = dto.WorkItemPriority;
                 data.UserAdded = actionUser.Id;
                 data.CompanyId = companyId;
 
@@ -152,6 +153,7 @@ namespace DataNexApi.Controllers
             data.WorkItemCategory = dto.WorkItemCategory;
             data.SprintId = dto.SprintId;
             data.DueDate = dto.DueDate;
+            data.WorkItemPriority = dto.WorkItemPriority;
             data.CompanyId = companyId;
 
             try
