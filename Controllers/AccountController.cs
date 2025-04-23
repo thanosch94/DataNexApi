@@ -228,6 +228,13 @@ namespace DataNexApi.Controllers
                         company.TaxOffice = dto.CompanyTaxOffice;
                         company.CompanyLoginCode = dto.CompanyLoginCode;
 
+                        var users = context.Users.ToList();
+
+                        foreach (var user in users)
+                        {
+                            user.CompanyId= company.Id;
+                        }
+
                         context.Add(company);
                         context.SaveChanges();
                         transaction.Commit();
