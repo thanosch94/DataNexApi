@@ -43,6 +43,7 @@ namespace DataNexApi.Controllers
                 DocumentStatusId = x.DocumentStatusId,
                 CustomerId = x.CustomerId,
                 CustomerName = x.Customer.Name,
+                WarehouseId = x.WarehouseId,
                 CustomerPhone1 = x.Customer.Phone1,
                 DocumentTotal = x.DocumentTotal,
                 ShippingAddress = x.ShippingAddress,
@@ -90,6 +91,7 @@ namespace DataNexApi.Controllers
                 DocumentStatusName = x.DocumentStatus.Name,
                 CustomerId = x.CustomerId,
                 SupplierId = x.SupplierId,
+                WarehouseId = x.WarehouseId,
                 CustomerName = x.Customer.Name,
                 CustomerPhone1 = x.Customer.Phone1,
                 DocumentTotal = x.DocumentTotal,
@@ -140,6 +142,7 @@ namespace DataNexApi.Controllers
                 DocumentStatusId = x.DocumentStatusId,
                 CustomerId = x.CustomerId,
                 SupplierId = x.SupplierId,
+                WarehouseId = x.WarehouseId,
                 CustomerName = x.Customer.Name,
                 CustomerPhone1 = x.Customer.Phone1,
                 DocumentTotal = x.DocumentTotal,
@@ -201,6 +204,7 @@ namespace DataNexApi.Controllers
             data.DocumentStatusId = document.DocumentStatusId;
             data.DocumentTotal = document.DocumentTotal;
             data.VatClassId = document.VatClassId;
+            data.WarehouseId = document.WarehouseId;
             data.ShippingAddress = document.ShippingAddress;
             data.ShippingRegion = document.ShippingRegion;
             data.ShippingPostalCode = document.ShippingPostalCode;
@@ -289,6 +293,7 @@ namespace DataNexApi.Controllers
             data.DocumentStatusId = document.DocumentStatusId;
             data.DocumentTotal = document.DocumentTotal;
             data.VatClassId = document.VatClassId;
+            data.WarehouseId = document.WarehouseId;
             data.ShippingAddress = document.ShippingAddress;
             data.ShippingRegion = document.ShippingRegion;
             data.ShippingPostalCode = document.ShippingPostalCode;

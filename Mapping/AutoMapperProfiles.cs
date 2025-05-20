@@ -41,6 +41,7 @@ namespace DataNexApi.Mapping
             CreateMap<WorkItem, WorkItemDto>().ReverseMap();
             CreateMap<WorkItemType, WorkItemTypeDto>().ReverseMap();
             CreateMap<AppPermission, AppPermissionDto>().ReverseMap();
+            CreateMap<UserAppPermission, UserAppPermissionDto>().ReverseMap();
 
         }
     }

@@ -43,13 +43,16 @@ namespace DataNexApi.Controllers
             Guid companyId = GetCompanyFromHeader();
             var actionUser = await GetActionUser();
 
-            var source = await _context.AppPermissions.Where(x => x.CompanyId == companyId && x.Key == dto.Key).FirstOrDefaultAsync();
+            var source = await _context.AppPermissions.Where(x => x.CompanyId == companyId && x.Key == dto.Key && x.MasterEntityId==dto.MasterEntityId).FirstOrDefaultAsync();
             if (source == null)
             {
 
                 var data = new AppPermission();
                 data.Code = dto.Code;
                 data.Name = dto.Name;
+                data.AppEntity= dto.AppEntity;
+                data.MasterEntityId = dto.MasterEntityId;
+                data.MasterEntityDescr = dto.MasterEntityDescr;
                 data.Key = dto.Key;
                 data.UserAdded = actionUser.Id;
                 data.CompanyId = companyId;
@@ -93,7 +96,7 @@ namespace DataNexApi.Controllers
 
             var actionUser = await GetActionUser();
 
-            var source = await _context.AppPermissions.FirstOrDefaultAsync(x => x.Id != dto.Id && x.Key==dto.Key && x.CompanyId == companyId);
+            var source = await _context.AppPermissions.FirstOrDefaultAsync(x => x.Id == dto.Id && x.Key==dto.Key && x.CompanyId == companyId);
             if (source == null)
             {
 
@@ -102,6 +105,9 @@ namespace DataNexApi.Controllers
             data.Code = dto.Code;
             data.Name = dto.Name;
             data.Key = dto.Key;
+            data.AppEntity = dto.AppEntity;
+            data.MasterEntityId = dto.MasterEntityId;
+            data.MasterEntityDescr = dto.MasterEntityDescr;
             data.UserAdded = actionUser.Id;
             data.CompanyId = companyId;
             data.UserUpdated = actionUser.Id;
