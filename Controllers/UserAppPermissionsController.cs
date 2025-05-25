@@ -35,6 +35,19 @@ namespace DataNexApi.Controllers
 
             return Ok(dto);
         }
+        
+
+        [HttpGet("getByUserId/{id}")]
+        public async Task<IActionResult> GetByUserId(Guid id)
+        {
+            Guid companyId = GetCompanyFromHeader();
+
+            var data = await _context.UserAppPermissions.Where(x => x.CompanyId == companyId && x.UserId==id).ToListAsync();
+
+            var dto = _mapper.Map<UserAppPermissionDto[]>(data);
+
+            return Ok(dto);
+        }
 
 
         [HttpPost("insertdto")]
@@ -74,7 +87,9 @@ namespace DataNexApi.Controllers
 
                 };
 
+                await _context.Entry(data).Reference(e => e.User).LoadAsync();
                 var dataToReturn = _mapper.Map<UserAppPermissionDto>(data);
+                dataToReturn.UserName = data.User.Name;
                 return Ok(dataToReturn);
 
             }
@@ -141,8 +156,9 @@ namespace DataNexApi.Controllers
 
             var actionUser = await GetActionUser();
 
-            var data = await _context.UserAppPermissions.FirstOrDefaultAsync(x => x.Id == id && x.CompanyId == companyId);
+            var data = await _context.UserAppPermissions.Include(x=>x.User).FirstOrDefaultAsync(x => x.Id == id && x.CompanyId == companyId);
 
+            var userName = data.User.Name;
             try
             {
                 _context.UserAppPermissions.Remove(data);
@@ -155,7 +171,10 @@ namespace DataNexApi.Controllers
                 LogService.CreateLog($"User App Permission \"{data.Id}\" could not be deleted by \"{actionUser.UserName}\" User App Permission: {JsonConvert.SerializeObject(data)} Error:{ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
             }
-            return Ok(data);
+            var dataToReturn = _mapper.Map<UserAppPermissionDto>(data);
+            dataToReturn.UserName = userName;
+
+            return Ok(dataToReturn);
         }
     }
 }

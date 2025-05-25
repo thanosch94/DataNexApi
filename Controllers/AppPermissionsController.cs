@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+using System.ComponentModel.DataAnnotations;
 
 namespace DataNexApi.Controllers
 {
@@ -30,11 +30,27 @@ namespace DataNexApi.Controllers
         {
             Guid companyId = GetCompanyFromHeader();
 
-            var data = await _context.AppPermissions.Where(x => x.CompanyId == companyId).ToListAsync();
+            var data = await _context.AppPermissions.Where(x => x.CompanyId == companyId).Select(x => new AppPermissionDto()
+            {
+                Id = x.Id,
+                Name = x.Name,
+                Key = x.Key,
+                AppEntity = x.AppEntity,
+                MasterEntityId = x.MasterEntityId,
+                MasterEntityDescr = x.MasterEntityDescr,
+                CompanyId = x.CompanyId,
+                UserAppPermissions = _context.UserAppPermissions.Include(y => y.User).Where(y => y.AppPermissionId == x.Id).Select(y => new UserAppPermissionDto()
+                {
+                    Id = y.Id,
+                    AppPermissionId = y.AppPermissionId,
+                    UserId = y.UserId,
+                    UserName = y.User.Name,
+                    CompanyId = y.CompanyId,
+                }).ToList()
+            }).ToListAsync();
 
-            var dto = _mapper.Map<AppPermissionDto[]>(data);
 
-            return Ok(dto);
+            return Ok(data);
         }
 
         [HttpPost("insertdto")]
@@ -56,28 +72,61 @@ namespace DataNexApi.Controllers
                 data.Key = dto.Key;
                 data.UserAdded = actionUser.Id;
                 data.CompanyId = companyId;
+
+                var users = await _context.Users.Select(x => new
+                {
+                    Id = x.Id,
+                    Name = x.Name
+                }).ToListAsync();
+
                 lock (_lockObject)
                 {
                     var maxNumber = _context.AppPermissions.Where(x => x.CompanyId == companyId).Max(x => (x.SerialNumber)) ?? 0;
                     data.SerialNumber = maxNumber + 1;
                     data.Code = data.SerialNumber.ToString().PadLeft(5, '0');
 
+                    data.UserAppPermissions = new List<UserAppPermission>();
+            
+
+                    foreach(var user in users)
+                    {
+                        var userAppPermission = new UserAppPermission();
+                        userAppPermission.UserId = user.Id;
+                        userAppPermission.AppPermissionId = data.Id;
+                        userAppPermission.CompanyId = companyId;
+                        data.UserAppPermissions.Add(userAppPermission);
+                    }
                     try
                     {
                         _context.Add(data);
+                        _context.AddRange(data.UserAppPermissions);
+
                         _context.SaveChanges();
-                        LogService.CreateLog($"App Permission \"{data.Name}\" inserted by \"{actionUser.UserName}\"  App Permission: {JsonConvert.SerializeObject(data)}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+
+
+                        LogService.CreateLog($"App Permission \"{data.Name}\" inserted by \"{actionUser.UserName}\"  App Permission: {JsonConvert.SerializeObject(data, new JsonSerializerSettings()
+                        {
+                            ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
+                        })}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
                     }
                     catch (Exception ex)
                     {
-                        LogService.CreateLog($"App Permission \"{data.Name}\" could not be inserted by \"{actionUser.UserName}\"  App Permission: {JsonConvert.SerializeObject(data)} Error: {ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                        LogService.CreateLog($"App Permission \"{data.Name}\" could not be inserted by \"{actionUser.UserName}\"  App Permission: {JsonConvert.SerializeObject(data, new JsonSerializerSettings()
+                        {
+                            ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
+                        })} Error: {ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
                         throw;
                     }
 
                 };
 
                 var dataToReturn = _mapper.Map<AppPermissionDto>(data);
+
+                foreach (var userPermission in dataToReturn.UserAppPermissions)
+                {
+                    userPermission.UserName = users.Where(x => x.Id == userPermission.UserId).FirstOrDefault()?.Name;
+                }
                 return Ok(dataToReturn);
 
             }
@@ -147,19 +196,31 @@ namespace DataNexApi.Controllers
 
             var data = await _context.AppPermissions.FirstOrDefaultAsync(x => x.Id == id && x.CompanyId == companyId);
 
+            var userAppPermissions = await _context.UserAppPermissions.Where(x=>x.AppPermissionId== id).ToListAsync();  
+
             try
             {
+                _context.RemoveRange(userAppPermissions);
+
                 _context.AppPermissions.Remove(data);
                 await _context.SaveChangesAsync();
-                LogService.CreateLog($"App Permission \"{data.Name}\" deleted by \"{actionUser.UserName}\"  App Permission: {JsonConvert.SerializeObject(data)}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                LogService.CreateLog($"App Permission \"{data.Name}\" deleted by \"{actionUser.UserName}\"  App Permission: {JsonConvert.SerializeObject(data, new JsonSerializerSettings()
+                {
+                    ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
+                })}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
             }
             catch (Exception ex)
             {
-                LogService.CreateLog($"App Permission \"{data.Name}\" could not be deleted by \"{actionUser.UserName}\"  App Permission: {JsonConvert.SerializeObject(data)} Error:{ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                LogService.CreateLog($"App Permission \"{data.Name}\" could not be deleted by \"{actionUser.UserName}\"  App Permission: {JsonConvert.SerializeObject(data, new JsonSerializerSettings()
+                {
+                    ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
+                })} Error:{ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
             }
-            return Ok(data);
+            var dataToReturn = _mapper.Map<AppPermissionDto>(data);
+
+            return Ok(dataToReturn);
         }
     }
 }
