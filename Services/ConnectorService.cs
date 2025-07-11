@@ -47,6 +47,18 @@ namespace DataNexApi.Services
                             try
                             {
                                 JsonConvert.PopulateObject(wooResponse.Response, wooResponseItems);
+
+                                if (wooResponseItems != null)
+                                {
+                                    foreach (var item in wooResponseItems)
+                                    {
+                                        if(item.images.Count > 0)
+                                        {
+                                            item.feature_image = item.images[0].src;
+
+                                        }
+                                    }
+                                }
                             }
                             catch (Exception ex)
                             {
@@ -89,6 +101,11 @@ namespace DataNexApi.Services
             }
             }
             return apiResponse;
+
+        }
+
+        public async Task WooDataTransformation()
+        {
 
         }
         //public async Task GetProductsFromWoo(string url)
