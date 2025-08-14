@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using System.Data.Common;
 
 namespace DataNexApi.Controllers
 {
@@ -74,26 +73,42 @@ namespace DataNexApi.Controllers
         }
 
         [HttpPost("insertdto")]
-        public async Task<IActionResult> InsertDto([FromBody] CustomerDto customer)
+        public async Task<IActionResult> InsertDto([FromBody] CustomerDto dto)
         {
             Guid companyId = GetCompanyFromHeader();
 
             var actionUser = await GetActionUser();
 
             var data = new Customer();
-            data.Name = customer.Name;
-            data.Address = customer.Address;
-            data.Region = customer.Region;
-            data.PostalCode = customer.PostalCode;
-            data.City = customer.City;
-            data.Country = customer.Country;
-            data.Phone1 = customer.Phone1;
-            data.Phone2 = customer.Phone2;
-            data.Email = customer.Email;
-            data.VatNumber = customer.VatNumber;
-            data.TaxOffice = customer.TaxOffice;
+            data.Name = dto.Name;
+            data.Address = dto.Address;
+            data.Region = dto.Region;
+            data.PostalCode = dto.PostalCode;
+            data.City = dto.City;
+            data.Country = dto.Country;
+            data.Phone1 = dto.Phone1;
+            data.Phone2 = dto.Phone2;
+            data.Email = dto.Email;
+            data.CompanyName = dto.CompanyName;
+            data.Occupation = dto.Occupation;
+            data.VatNumber = dto.VatNumber;
+            data.TaxOffice = dto.TaxOffice;
             data.UserAdded = actionUser.Id;
             data.CompanyId = companyId;
+            data.VatClassId = dto.VatClassId;
+            data.Notes = dto.Notes;
+            data.UserText1 = dto.UserText1;
+            data.UserText2 = dto.UserText2;
+            data.UserText3 = dto.UserText3;
+            data.UserText4 = dto.UserText4;
+            data.UserNumber1 = dto.UserNumber1;
+            data.UserNumber2 = dto.UserNumber2;
+            data.UserNumber3 = dto.UserNumber3;
+            data.UserNumber4 = dto.UserNumber4;
+            data.UserDate1 = dto.UserDate1;
+            data.UserDate2 = dto.UserDate2;
+            data.UserDate3 = dto.UserDate3;
+            data.UserDate4 = dto.UserDate4;
             lock (_lockObject)
             {
                 try
@@ -116,9 +131,9 @@ namespace DataNexApi.Controllers
             };
             
 
-            var dto = _mapper.Map<CustomerDto>(data);
+            var dataToReturn = _mapper.Map<CustomerDto>(data);
 
-            return Ok(dto);
+            return Ok(dataToReturn);
         }
 
 
@@ -140,10 +155,25 @@ namespace DataNexApi.Controllers
             data.Phone1 = dto.Phone1;
             data.Phone2 = dto.Phone2;
             data.Email = dto.Email;
+            data.CompanyName = dto.CompanyName;
+            data.Occupation = dto.Occupation;
             data.VatNumber = dto.VatNumber;
             data.TaxOffice = dto.TaxOffice;
             data.CompanyId = companyId;
-
+            data.VatClassId = dto.VatClassId;
+            data.Notes = dto.Notes;
+            data.UserText1 = dto.UserText1;
+            data.UserText2 = dto.UserText2;
+            data.UserText3 = dto.UserText3;
+            data.UserText4 = dto.UserText4;
+            data.UserNumber1 = dto.UserNumber1;
+            data.UserNumber2 = dto.UserNumber2;
+            data.UserNumber3 = dto.UserNumber3;
+            data.UserNumber4 = dto.UserNumber4;
+            data.UserDate1 = dto.UserDate1;
+            data.UserDate2 = dto.UserDate2;
+            data.UserDate3 = dto.UserDate3;
+            data.UserDate4 = dto.UserDate4;
             try
             {
                 await _context.SaveChangesAsync();
