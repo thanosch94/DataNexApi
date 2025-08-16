@@ -44,6 +44,8 @@ namespace DataNexApi.Mapping
             CreateMap<UserAppPermission, UserAppPermissionDto>().ReverseMap();
             CreateMap<CntorDatasource, CntorDatasourceDto>().ReverseMap();
             CreateMap<CntorDatasourceEntity, CntorDatasourceEntityDto>().ReverseMap();
+            CreateMap<Address, AddressDto>().ReverseMap();
+            CreateMap<CustomerAddress, CustomerAddressDto>().ReverseMap();
 
         }
     }
