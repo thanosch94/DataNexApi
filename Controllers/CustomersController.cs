@@ -49,10 +49,9 @@ namespace DataNexApi.Controllers
         {
             Guid companyId = GetCompanyFromHeader();
 
-            var data = await _context.Customers.Where(x => x.Id == id && x.CompanyId == companyId).FirstOrDefaultAsync();
+            var data = await _context.Customers.Include(x=>x.CustomerAddresses.OrderByDescending(y=>y.IsDefault)).ThenInclude(x=>x.Address).Where(x => x.Id == id && x.CompanyId == companyId).FirstOrDefaultAsync();
 
             var dto = _mapper.Map<CustomerDto>(data);
-
 
             return Ok(dto);
         }
@@ -109,6 +108,28 @@ namespace DataNexApi.Controllers
             data.UserDate2 = dto.UserDate2;
             data.UserDate3 = dto.UserDate3;
             data.UserDate4 = dto.UserDate4;
+
+       
+            data.CustomerAddresses = dto.CustomerAddresses.Select(x => new CustomerAddress()
+            {
+                Id = Guid.NewGuid(),
+                AddressType = x.AddressType,
+                Address = new Address()
+                {
+                    Id = Guid.NewGuid(),
+                    Street = x.Address.Street,
+                    StreetNumber = x.Address.StreetNumber,
+                    PostalCode = x.Address.PostalCode,
+                    City = x.Address.City,
+                    Country = x.Address.Country,
+                    CompanyId = companyId
+                },
+                CustomerId =data.Id,
+                IsDefault =x.IsDefault,
+                Notes = x.Notes,
+                CompanyId = companyId,
+            }).ToList();
+
             lock (_lockObject)
             {
                 try
@@ -119,12 +140,18 @@ namespace DataNexApi.Controllers
 
                     _context.Customers.Add(data);
                     _context.SaveChanges();
-                    LogService.CreateLog($"Customer \"{data.Name}\" inserted by \"{actionUser.UserName}\". Customer: {JsonConvert.SerializeObject(data)}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                    LogService.CreateLog($"Customer \"{data.Name}\" inserted by \"{actionUser.UserName}\". Customer: {JsonConvert.SerializeObject(data, new JsonSerializerSettings()
+                    {
+                        ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
+                    })}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
                 }
                 catch (Exception ex)
                 {
-                    LogService.CreateLog($"Customer \"{data.Name}\" could not be inserted by \"{actionUser.UserName}\" Customer: {JsonConvert.SerializeObject(data)} Error:{ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                    LogService.CreateLog($"Customer \"{data.Name}\" could not be inserted by \"{actionUser.UserName}\" Customer: {JsonConvert.SerializeObject(data, new JsonSerializerSettings()
+                    {
+                        ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
+                    })} Error:{ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
                     throw;
                 }
 
@@ -197,8 +224,6 @@ namespace DataNexApi.Controllers
             var actionUser = await GetActionUser();
 
             var data = await _context.Customers.FirstOrDefaultAsync(x => x.Id == id && x.CompanyId==companyId);
-
-            _context.Customers.Remove(data);
 
             try
             {
