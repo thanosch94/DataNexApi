@@ -29,7 +29,7 @@ namespace DataNexApi.Controllers
         {
             Guid companyId = GetCompanyFromHeader();
 
-            var data = await _context.Customers.Where(x=> x.CompanyId == companyId).ToListAsync();
+            var data = await _context.Customers.Where(x=> x.CompanyId == companyId).OrderBy(x=>x.SerialNumber).ToListAsync();
 
             return Ok(data);
         }
