@@ -1,5 +1,5 @@
 Migration
-1. Add-Migration AddedDocumentSeries -Project DataNex.Data -context ApplicationDbContext -Args "--SqlServer"
+1. Add-Migration AddedDocumentTypesTransformations -Project DataNex.Data -context ApplicationDbContext -Args "--SqlServer"
 2. Update-Database -context MsSqlDbContext
 3. Script-Migration -i 0 -context ApplicationDbContext
 

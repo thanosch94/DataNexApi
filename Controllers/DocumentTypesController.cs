@@ -31,9 +31,10 @@ namespace DataNexApi.Controllers
         {
             Guid companyId = GetCompanyFromHeader();
 
-            var data = await _context.DocumentTypes.Where(x=>x.CompanyId==companyId).ToListAsync();
+            var data = await _context.DocumentTypes.Include(x=>x.DocumentSeries).Where(x=>x.CompanyId==companyId).ToListAsync();
 
-            return Ok(data);
+            var dto = _mapper.Map<List<DocumentTypeDto>>(data);
+            return Ok(dto);
         }
 
         [HttpGet("getLookup")]
@@ -41,10 +42,15 @@ namespace DataNexApi.Controllers
         {
             Guid companyId = GetCompanyFromHeader();
 
-            var data = await _context.DocumentTypes.Where(x => x.CompanyId == companyId).Select(x=>new DocumentTypeDto()
+            var data = await _context.DocumentTypes.Include(x => x.DocumentSeries).Where(x => x.CompanyId == companyId).Select(x=>new DocumentTypeDto()
             {
                 Id=x.Id,
                 Name = x.Name,  
+                DocumentSeries=x.DocumentSeries.Select(y=>new DocumentSeriesDto()
+                {
+                    Id=y.Id,
+                    Name=y.Name,
+                }).ToList(),
             }).ToListAsync();
 
             return Ok(data);
