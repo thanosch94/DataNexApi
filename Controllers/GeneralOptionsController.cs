@@ -27,7 +27,7 @@ namespace DataNexApi.Controllers
         {
             Guid companyId = GetCompanyFromHeader();
 
-            var data = await _context.GeneralAppOptions.Where(x => x.CompanyId == companyId).FirstOrDefaultAsync();
+            var data = await _context.GeneralAppOptions.Where(x => x.CompanyId == companyId).ToListAsync();
 
             return Ok(data);
         }

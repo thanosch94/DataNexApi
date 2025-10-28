@@ -237,6 +237,12 @@ namespace DataNexApi.Controllers
 
             var data = await _context.Users.FirstOrDefaultAsync(x => x.Id == id && x.CompanyId == companyId);
 
+            var role = await _context.UserRoles.FirstOrDefaultAsync(x => x.UserId == data.Id);
+            if(role != null)
+            {
+                _context.UserRoles.Remove(role);
+            }
+
             _context.Users.Remove(data);
 
             try

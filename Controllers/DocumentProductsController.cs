@@ -3,13 +3,10 @@ using DataNex.Data;
 using DataNex.Model.Dtos;
 using DataNex.Model.Enums;
 using DataNex.Model.Models;
-using DataNexApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using System.Reflection.Metadata;
-using System.Xml.Linq;
 
 namespace DataNexApi.Controllers
 {
@@ -286,7 +283,7 @@ namespace DataNexApi.Controllers
 
             var lotQties = await _context.DocumentProductLotsQuantities.Where(x => x.DocumentProductId == id).ToListAsync();
             try
-            {       
+            {
                 _context.RemoveRange(lotQties);
                 _context.DocumentProducts.Remove(data);
                 await _context.SaveChangesAsync();

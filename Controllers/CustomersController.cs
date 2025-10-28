@@ -29,7 +29,7 @@ namespace DataNexApi.Controllers
         {
             Guid companyId = GetCompanyFromHeader();
 
-            var data = await _context.Customers.Where(x=> x.CompanyId == companyId).OrderBy(x=>x.SerialNumber).ToListAsync();
+            var data = await _context.Customers.Where(x => x.CompanyId == companyId).OrderBy(x => x.SerialNumber).ToListAsync();
 
             return Ok(data);
         }
@@ -49,7 +49,7 @@ namespace DataNexApi.Controllers
         {
             Guid companyId = GetCompanyFromHeader();
 
-            var data = await _context.Customers.Include(x=>x.CustomerAddresses.OrderByDescending(y=>y.IsDefault)).ThenInclude(x=>x.Address).Where(x => x.Id == id && x.CompanyId == companyId).FirstOrDefaultAsync();
+            var data = await _context.Customers.Include(x => x.CustomerAddresses.OrderByDescending(y => y.IsDefault)).ThenInclude(x => x.Address).Where(x => x.Id == id && x.CompanyId == companyId).FirstOrDefaultAsync();
 
             var dto = _mapper.Map<CustomerDto>(data);
 
@@ -65,8 +65,8 @@ namespace DataNexApi.Controllers
             {
                 Id = x.Id,
                 Name = x.Name,
-                CompanyId=x.CompanyId
-            }).Where(x=>x.CompanyId==companyId).ToListAsync();
+                CompanyId = x.CompanyId
+            }).Where(x => x.CompanyId == companyId).ToListAsync();
 
             return Ok(data);
         }
@@ -109,32 +109,34 @@ namespace DataNexApi.Controllers
             data.UserDate3 = dto.UserDate3;
             data.UserDate4 = dto.UserDate4;
 
-       
-            data.CustomerAddresses = dto.CustomerAddresses.Select(x => new CustomerAddress()
+            if (dto.CustomerAddresses != null)
             {
-                Id = Guid.NewGuid(),
-                AddressType = x.AddressType,
-                Address = new Address()
+                data.CustomerAddresses = dto.CustomerAddresses.Select(x => new CustomerAddress()
                 {
                     Id = Guid.NewGuid(),
-                    Street = x.Address.Street,
-                    StreetNumber = x.Address.StreetNumber,
-                    PostalCode = x.Address.PostalCode,
-                    City = x.Address.City,
-                    Country = x.Address.Country,
-                    CompanyId = companyId
-                },
-                CustomerId =data.Id,
-                IsDefault =x.IsDefault,
-                Notes = x.Notes,
-                CompanyId = companyId,
-            }).ToList();
+                    AddressType = x.AddressType,
+                    Address = new Address()
+                    {
+                        Id = Guid.NewGuid(),
+                        Street = x.Address.Street,
+                        StreetNumber = x.Address.StreetNumber,
+                        PostalCode = x.Address.PostalCode,
+                        City = x.Address.City,
+                        Country = x.Address.Country,
+                        CompanyId = companyId
+                    },
+                    CustomerId = data.Id,
+                    IsDefault = x.IsDefault,
+                    Notes = x.Notes,
+                    CompanyId = companyId,
+                }).ToList();
+            }
 
             lock (_lockObject)
             {
                 try
                 {
-                    var maxNumber = _context.Customers.Where(x=> x.CompanyId == companyId).Max(x => (x.SerialNumber)) ?? 0;
+                    var maxNumber = _context.Customers.Where(x => x.CompanyId == companyId).Max(x => (x.SerialNumber)) ?? 0;
                     data.SerialNumber = maxNumber + 1;
                     data.Code = data.SerialNumber.ToString().PadLeft(5, '0');
 
@@ -156,7 +158,7 @@ namespace DataNexApi.Controllers
                 }
 
             };
-            
+
 
             var dataToReturn = _mapper.Map<CustomerDto>(data);
 
@@ -223,7 +225,7 @@ namespace DataNexApi.Controllers
 
             var actionUser = await GetActionUser();
 
-            var data = await _context.Customers.FirstOrDefaultAsync(x => x.Id == id && x.CompanyId==companyId);
+            var data = await _context.Customers.FirstOrDefaultAsync(x => x.Id == id && x.CompanyId == companyId);
 
             try
             {

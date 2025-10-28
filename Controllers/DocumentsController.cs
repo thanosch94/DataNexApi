@@ -36,6 +36,7 @@ namespace DataNexApi.Controllers
                 SerialNumber = x.SerialNumber,
                 DocumentDateTime = x.DocumentDateTime.ToLocalTime(),
                 DocumentTypeId = x.DocumentTypeId,
+                DocumentSeriesId = x.DocumentSeriesId,
                 DocumentTypeName = x.DocumentType.Name,
                 DocumentNumber = x.DocumentNumber,
                 VatClassId = x.VatClassId,
@@ -44,6 +45,8 @@ namespace DataNexApi.Controllers
                 CustomerId = x.CustomerId,
                 CustomerName = x.Customer.Name,
                 WarehouseId = x.WarehouseId,
+                PaymentMethodId = x.PaymentMethodId,
+                ShippingMethodId = x.ShippingMethodId,
                 CustomerPhone1 = x.Customer.Phone1,
                 DocumentTotal = x.DocumentTotal,
                 ShippingAddress = x.ShippingAddress,
@@ -83,6 +86,7 @@ namespace DataNexApi.Controllers
                 SerialNumber = x.SerialNumber,
                 DocumentDateTime = x.DocumentDateTime.ToLocalTime(),
                 DocumentTypeId = x.DocumentTypeId,
+                DocumentSeriesId = x.DocumentSeriesId,
                 DocumentCode = x.DocumentCode,
                 DocumentTypeName = x.DocumentType.Abbreviation,
                 DocumentNumber = x.DocumentNumber,
@@ -95,6 +99,8 @@ namespace DataNexApi.Controllers
                 CustomerName = x.Customer.Name,
                 CustomerPhone1 = x.Customer.Phone1,
                 DocumentTotal = x.DocumentTotal,
+                PaymentMethodId = x.PaymentMethodId,
+                ShippingMethodId = x.ShippingMethodId,
                 ShippingAddress = x.ShippingAddress,
                 ShippingRegion = x.ShippingRegion,
                 ShippingPostalCode = x.ShippingPostalCode,
@@ -135,6 +141,7 @@ namespace DataNexApi.Controllers
                 SerialNumber = x.SerialNumber,
                 DocumentDateTime = x.DocumentDateTime.ToLocalTime(),
                 DocumentTypeId = x.DocumentTypeId,
+                DocumentSeriesId = x.DocumentSeriesId,
                 DocumentTypeName = x.DocumentType.Name,
                 DocumentNumber = x.DocumentNumber,
                 VatClassId =x.VatClassId,
@@ -146,6 +153,8 @@ namespace DataNexApi.Controllers
                 CustomerName = x.Customer.Name,
                 CustomerPhone1 = x.Customer.Phone1,
                 DocumentTotal = x.DocumentTotal,
+                PaymentMethodId = x.PaymentMethodId,
+                ShippingMethodId = x.ShippingMethodId,
                 ShippingAddress = x.ShippingAddress,
                 ShippingRegion = x.ShippingRegion,
                 ShippingPostalCode = x.ShippingPostalCode,
@@ -182,11 +191,13 @@ namespace DataNexApi.Controllers
             var data = new Document();
             data.Id = document.Id;
             data.DocumentTypeId = document.DocumentTypeId;
+            data.DocumentSeriesId = document.DocumentSeriesId;
             data.DocumentDateTime = document.DocumentDateTime;
-            var source = await _context.Documents.Where(x => x.DocumentTypeId == document.DocumentTypeId && x.CompanyId == companyId).OrderByDescending(x => x.DocumentNumber).FirstOrDefaultAsync();
-            if (source != null)
+
+            var docSeries = await _context.DocumentSeries.Where(x => x.Id == document.DocumentSeriesId).FirstOrDefaultAsync();
+            if (docSeries != null)
             {
-                data.DocumentNumber = source.DocumentNumber + 1;
+                data.DocumentNumber = docSeries.CurrentNumber + 1;
             }
             else
             {
@@ -238,6 +249,7 @@ namespace DataNexApi.Controllers
                 try
                 {
                     _context.Documents.Add(data);
+                    docSeries.CurrentNumber = data.DocumentNumber;
                     _context.SaveChanges();
                     LogMessage($"New document inserted by \"{actionUser.UserName}\". Document: {JsonConvert.SerializeObject(data, new JsonSerializerSettings()
                     {

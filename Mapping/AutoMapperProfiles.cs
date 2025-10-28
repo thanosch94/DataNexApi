@@ -47,6 +47,9 @@ namespace DataNexApi.Mapping
             CreateMap<Address, AddressDto>().ReverseMap();
             CreateMap<CustomerAddress, CustomerAddressDto>().ReverseMap();
             CreateMap<DocumentSeries, DocumentSeriesDto>().ReverseMap();
+            CreateMap<DocTypeTransformation, DocTypeTransformationDto>().ReverseMap();
+            CreateMap<PaymentMethod, PaymentMethodDto>().ReverseMap();
+            CreateMap<ShippingMethod, ShippingMethodDto>().ReverseMap();
 
         }
     }

@@ -70,12 +70,18 @@ namespace DataNexApi.Controllers
                 {
                     _context.DocumentAdditionalCharges.Add(data);
                     _context.SaveChanges();
-                    LogService.CreateLog($"Document Additional Charge inserted by \"{actionUser.UserName}\"  Document Additional Charge: {JsonConvert.SerializeObject(data)}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                    LogService.CreateLog($"Document Additional Charge inserted by \"{actionUser.UserName}\"  Document Additional Charge: {JsonConvert.SerializeObject(data, new JsonSerializerSettings()
+                    {
+                        ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
+                    })}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
                 }
                 catch (Exception ex)
                 {
-                    LogService.CreateLog($"Document Additional Charge could not be inserted by \"{actionUser.UserName}\" Document Additional Charge: {JsonConvert.SerializeObject(data)} Error: {ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                    LogService.CreateLog($"Document Additional Charge could not be inserted by \"{actionUser.UserName}\" Document Additional Charge: {JsonConvert.SerializeObject(data, new JsonSerializerSettings()
+                    {
+                        ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
+                    })} Error: {ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
                     throw;
                 }
             };
@@ -108,15 +114,21 @@ namespace DataNexApi.Controllers
             {
                 await _context.SaveChangesAsync();
 
-                LogService.CreateLog($"Document Additional Charge updated by \"{actionUser.UserName}\"  Document Additional Charge: {JsonConvert.SerializeObject(data)}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                LogService.CreateLog($"Document Additional Charge updated by \"{actionUser.UserName}\"  Document Additional Charge: {JsonConvert.SerializeObject(data, new JsonSerializerSettings()
+                {
+                    ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
+                })}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
             }
             catch (Exception ex)
             {
-                LogService.CreateLog($"Document Additional Charge could not be updated by \"{actionUser.UserName}\" Document Additional Charge: {JsonConvert.SerializeObject(data)} Error: {ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                LogService.CreateLog($"Document Additional Charge could not be updated by \"{actionUser.UserName}\" Document Additional Charge: {JsonConvert.SerializeObject(data, new JsonSerializerSettings()
+                {
+                    ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
+                })} Error: {ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
             }
-
-            return Ok(data);
+            var dataToReturn = _mapper.Map<DocumentAdditionalChargeDto>(data);
+            return Ok(dataToReturn);
         }
 
         [HttpDelete("deletebyid/{id}")]
@@ -134,12 +146,18 @@ namespace DataNexApi.Controllers
             {
                 _context.DocumentAdditionalCharges.Remove(data);
                 await _context.SaveChangesAsync();
-                LogService.CreateLog($"Document Additional Charge deleted by \"{actionUser.UserName}\"  Document Additional Charge: {JsonConvert.SerializeObject(data)}.", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                LogService.CreateLog($"Document Additional Charge deleted by \"{actionUser.UserName}\"  Document Additional Charge: {JsonConvert.SerializeObject(data, new JsonSerializerSettings()
+                {
+                    ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
+                })}", LogTypeEnum.Information, LogOriginEnum.DataNexApp, actionUser.Id, _context);
 
             }
             catch (Exception ex)
             {
-                LogService.CreateLog($"Document Additional Charge could not be deleted by \"{actionUser.UserName}\" Document Additional Charge: {JsonConvert.SerializeObject(data)} Error: {ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
+                LogService.CreateLog($"Document Additional Charge could not be deleted by \"{actionUser.UserName}\" Document Additional Charge: {JsonConvert.SerializeObject(data, new JsonSerializerSettings()
+                {
+                    ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
+                })} Error: {ex.Message}.", LogTypeEnum.Error, LogOriginEnum.DataNexApp, actionUser.Id, _context);
             }
             return Ok(data);
         }
