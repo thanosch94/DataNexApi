@@ -1,16 +1,11 @@
 using DataNex.Data;
-using DataNexApi;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity;
 using DataNex.Model.Models;
+using DataNexApi;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using System.Configuration;
-using Newtonsoft.Json;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -92,7 +87,7 @@ builder.Services.AddScoped<ApplicationDbContext>(serviceProvider =>
                 sqlOptions.MigrationsAssembly("DataNex.Data"));
             return new ApplicationDbContext(optionsBuilder.Options);
         }
-        
+
     });
 
 

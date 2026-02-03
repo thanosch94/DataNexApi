@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System.Xml.Linq;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace DataNexApi.Controllers
 {
@@ -20,7 +21,7 @@ namespace DataNexApi.Controllers
         private IMapper _mapper;
         private static readonly object _lockObject = new object();
 
-        public DocumentTypesController(ApplicationDbContext context, IMapper mapper):base(context)
+        public DocumentTypesController(ApplicationDbContext context, IMapper mapper) : base(context)
         {
             _context = context;
             _mapper = mapper;
@@ -31,7 +32,7 @@ namespace DataNexApi.Controllers
         {
             Guid companyId = GetCompanyFromHeader();
 
-            var data = await _context.DocumentTypes.Include(x=>x.DocumentSeries).Where(x=>x.CompanyId==companyId).ToListAsync();
+            var data = await _context.DocumentTypes.Include(x => x.DocumentSeries).Where(x => x.CompanyId == companyId).ToListAsync();
 
             var dto = _mapper.Map<List<DocumentTypeDto>>(data);
             return Ok(dto);
@@ -42,14 +43,14 @@ namespace DataNexApi.Controllers
         {
             Guid companyId = GetCompanyFromHeader();
 
-            var data = await _context.DocumentTypes.Include(x => x.DocumentSeries).Where(x => x.CompanyId == companyId).Select(x=>new DocumentTypeDto()
+            var data = await _context.DocumentTypes.Include(x => x.DocumentSeries).Where(x => x.CompanyId == companyId).Select(x => new DocumentTypeDto()
             {
-                Id=x.Id,
-                Name = x.Name,  
-                DocumentSeries=x.DocumentSeries.Select(y=>new DocumentSeriesDto()
+                Id = x.Id,
+                Name = x.Name,
+                DocumentSeries = x.DocumentSeries.Select(y => new DocumentSeriesDto()
                 {
-                    Id=y.Id,
-                    Name=y.Name,
+                    Id = y.Id,
+                    Name = y.Name,
                 }).ToList(),
             }).ToListAsync();
 
@@ -61,7 +62,7 @@ namespace DataNexApi.Controllers
         {
             Guid companyId = GetCompanyFromHeader();
 
-            var data = await _context.DocumentTypes.Where(x=>x.DocumentTypeGroup == documentTypeGroup && x.IsActive==true && x.CompanyId == companyId).Select(x=> new DocumentTypeDto()
+            var data = await _context.DocumentTypes.Where(x => x.DocumentTypeGroup == documentTypeGroup && x.IsActive == true && x.CompanyId == companyId).Select(x => new DocumentTypeDto()
             {
                 Id = x.Id,
                 Abbreviation = x.Abbreviation,
@@ -99,9 +100,13 @@ namespace DataNexApi.Controllers
             data.DocumentTypeGroup = documentType.DocumentTypeGroup;
             data.IsActive = documentType.IsActive;
             data.PersonBalanceAffectBehavior = documentType.PersonBalanceAffectBehavior;
-            data.WareHouseAffectBehavior =documentType.WareHouseAffectBehavior;
+            data.WareHouseAffectBehavior = documentType.WareHouseAffectBehavior;
+            data.UsesPrices = documentType.UsesPrices;
+            data.AutoIncrementCodeEnabled = documentType.AutoIncrementCodeEnabled;
+            data.CancellationDocTypeId = documentType.CancellationDocTypeId;
+
             data.UserAdded = actionUser.Id;
-            data.CompanyId= companyId;
+            data.CompanyId = companyId;
 
             lock (_lockObject)
             {
@@ -120,7 +125,7 @@ namespace DataNexApi.Controllers
                     throw;
                 }
             };
-           
+
 
             var dto = _mapper.Map<DocumentTypeDto>(data);
 
@@ -136,6 +141,7 @@ namespace DataNexApi.Controllers
             var actionUser = await GetActionUser();
 
             var data = await _context.DocumentTypes.Where(x => x.Id == documentType.Id && x.CompanyId == companyId).FirstOrDefaultAsync();
+            data.AutoIncrementCodeEnabled = documentType.AutoIncrementCodeEnabled;
 
 
             if (!data.IsSeeded)
@@ -147,7 +153,9 @@ namespace DataNexApi.Controllers
                 data.IsActive = documentType.IsActive;
                 data.PersonBalanceAffectBehavior = documentType.PersonBalanceAffectBehavior;
                 data.WareHouseAffectBehavior = documentType.WareHouseAffectBehavior;
-                data.CompanyId=companyId;
+                data.UsesPrices = documentType.UsesPrices;
+                data.CancellationDocTypeId = documentType.CancellationDocTypeId;
+                data.CompanyId = companyId;
                 try
                 {
                     await _context.SaveChangesAsync();
@@ -167,7 +175,8 @@ namespace DataNexApi.Controllers
             else
             {
                 //If any change made to a seeded entity except IsActive
-                if (data.Name != documentType.Name || data.Description != documentType.Description || data.Abbreviation != documentType.Abbreviation || data.DocumentTypeGroup != documentType.DocumentTypeGroup ||data.WareHouseAffectBehavior !=documentType.WareHouseAffectBehavior ||data.PersonBalanceAffectBehavior !=documentType.PersonBalanceAffectBehavior)
+                var hasUpdate = CheckForUpdates(data, documentType);
+                if (hasUpdate)
                 {
                     return BadRequest("Record cannot be updated. If necessary deactivate it and create a new one.");
                 }
@@ -201,7 +210,7 @@ namespace DataNexApi.Controllers
 
             var actionUser = await GetActionUser();
 
-            var data = await _context.DocumentTypes.FirstOrDefaultAsync(x => x.Id == id && x.CompanyId==companyId);
+            var data = await _context.DocumentTypes.FirstOrDefaultAsync(x => x.Id == id && x.CompanyId == companyId);
 
             if (!data.IsSeeded)
             {
@@ -228,6 +237,26 @@ namespace DataNexApi.Controllers
                 return BadRequest("Record cannot be deleted. It can only be deactivated.");
             }
 
+        }
+
+        public bool CheckForUpdates(DocumentType dto1, DocumentTypeDto dto2)
+        {
+            if (dto1.Name != dto2.Name ||
+                dto1.Description != dto2.Description ||
+                dto1.Abbreviation != dto2.Abbreviation ||
+                dto1.DocumentTypeGroup != dto2.DocumentTypeGroup ||
+                dto1.WareHouseAffectBehavior != dto2.WareHouseAffectBehavior ||
+                dto1.PersonBalanceAffectBehavior != dto2.PersonBalanceAffectBehavior ||
+       
+                dto1.CancellationDocTypeId != dto2.CancellationDocTypeId)
+            {
+                return true;
+
+            }
+            else
+            {
+                return false;
+            }
         }
     }
 }

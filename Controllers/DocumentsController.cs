@@ -79,7 +79,7 @@ namespace DataNexApi.Controllers
         {
             Guid companyId = GetCompanyFromHeader();
 
-            var data = await _context.Documents.Include(x => x.DocumentStatus).Include(x => x.Customer).Include(x => x.DocumentType).Where(x => x.Id == id && x.CompanyId == companyId).Select(x => new DocumentDto()
+            var data = await _context.Documents.Include(x => x.DocumentProducts).ThenInclude(x => x.Product).Include(x => x.Customer).Where(x => x.Id == id && x.CompanyId == companyId).Select(x => new DocumentDto()
             {
                 Id = x.Id,
                 Code = x.Code,
@@ -88,15 +88,12 @@ namespace DataNexApi.Controllers
                 DocumentTypeId = x.DocumentTypeId,
                 DocumentSeriesId = x.DocumentSeriesId,
                 DocumentCode = x.DocumentCode,
-                DocumentTypeName = x.DocumentType.Abbreviation,
                 DocumentNumber = x.DocumentNumber,
                 VatClassId = x.VatClassId,
                 DocumentStatusId = x.DocumentStatusId,
-                DocumentStatusName = x.DocumentStatus.Name,
                 CustomerId = x.CustomerId,
                 SupplierId = x.SupplierId,
                 WarehouseId = x.WarehouseId,
-                CustomerName = x.Customer.Name,
                 CustomerPhone1 = x.Customer.Phone1,
                 DocumentTotal = x.DocumentTotal,
                 PaymentMethodId = x.PaymentMethodId,
@@ -121,8 +118,25 @@ namespace DataNexApi.Controllers
                 UserDate2 = x.UserDate2,
                 UserDate3 = x.UserDate3,
                 UserDate4 = x.UserDate4,
+                DocumentProducts = x.DocumentProducts.Select(y => new DocumentProductDto()
+                {
+                    Id = y.Id,
+                    ProductId = y.ProductId,
+                    SerialNumber = y.SerialNumber,
+                    Code = y.Code,
+                    DocumentId = y.DocumentId,
+                    Quantity = y.Quantity,
+                    ProductSizeId = y.ProductSizeId,
+                    ProductName = y.Product.Name,
+                    Sku = y.Product.Sku,
+                    ProductRetailPrice = y.Price,
+                    VatAmount = y.VatAmount,
+                    TotalVatAmount = y.TotalVatAmount,
+                    VatClassId = y.Product.VatClassId,
+                    TotalPrice = y.TotalPrice,
+                }).ToList()
 
-            }).AsSplitQuery().FirstOrDefaultAsync();
+            }).FirstOrDefaultAsync();
 
 
             return Ok(data);
@@ -144,7 +158,7 @@ namespace DataNexApi.Controllers
                 DocumentSeriesId = x.DocumentSeriesId,
                 DocumentTypeName = x.DocumentType.Name,
                 DocumentNumber = x.DocumentNumber,
-                VatClassId =x.VatClassId,
+                VatClassId = x.VatClassId,
                 DocumentCode = x.DocumentCode,
                 DocumentStatusId = x.DocumentStatusId,
                 CustomerId = x.CustomerId,
@@ -174,7 +188,7 @@ namespace DataNexApi.Controllers
                 UserDate1 = x.UserDate1,
                 UserDate2 = x.UserDate2,
                 UserDate3 = x.UserDate3,
-                UserDate4 = x.UserDate4             
+                UserDate4 = x.UserDate4
             }).ToListAsync();
 
             return Ok(data);
@@ -189,7 +203,7 @@ namespace DataNexApi.Controllers
             var actionUser = await GetActionUser();
 
             var data = new Document();
-            data.Id = document.Id;
+            //data.Id = document.Id;
             data.DocumentTypeId = document.DocumentTypeId;
             data.DocumentSeriesId = document.DocumentSeriesId;
             data.DocumentDateTime = document.DocumentDateTime;
@@ -216,6 +230,10 @@ namespace DataNexApi.Controllers
             data.DocumentTotal = document.DocumentTotal;
             data.VatClassId = document.VatClassId;
             data.WarehouseId = document.WarehouseId;
+            data.PaymentMethodId = document.PaymentMethodId;
+            data.ShippingMethodId = document.ShippingMethodId; 
+            data.SourceDocIdsList = document.SourceDocIdsList;
+            data.TargetDocIdsList = document.TargetDocIdsList;
             data.ShippingAddress = document.ShippingAddress;
             data.ShippingRegion = document.ShippingRegion;
             data.ShippingPostalCode = document.ShippingPostalCode;
@@ -224,6 +242,7 @@ namespace DataNexApi.Controllers
             data.ShippingPhone1 = document.ShippingPhone1;
             data.ShippingPhone2 = document.ShippingPhone2;
             data.ShippingEmail = document.ShippingEmail;
+            data.TransfromationStatus = document.TransfromationStatus;
             data.UserText1 = document.UserText1;
             data.UserText2 = document.UserText2;
             data.UserText3 = document.UserText3;
@@ -239,10 +258,68 @@ namespace DataNexApi.Controllers
             data.UserAdded = actionUser.Id;
             data.CompanyId = companyId;
 
+            //Set Document Products
+            var generalOptions = await _context.GeneralAppOptions.FirstOrDefaultAsync();
+
+            foreach (var product in document.DocumentProducts)
+            {
+                product.DocumentId = data.Id;
+                //Lots
+                if (generalOptions.LotsEnabled)
+                {
+                    var productLotsQuantities =
+                        new List<DocumentProductLotQuantityDto>();
+
+                    foreach (var x in product.DocumentProductLotsQuantities)
+                    {
+                        var lotDto = new DocumentProductLotQuantityDto
+                        {
+                            Quantity = x.Quantity,
+                            LotId = x.LotId
+                        };
+
+                        productLotsQuantities.Add(lotDto);
+                    }
+
+                    product.DocumentProductLotsQuantities = productLotsQuantities;
+
+                    var docType = await _context.DocumentTypes.FirstOrDefaultAsync(x => x.Id == document.DocumentTypeId);
+                    foreach (var lotQtyLine in product.DocumentProductLotsQuantities)
+                    {
+                        var lot = await _context.Lots.FirstOrDefaultAsync(x => x.Id == lotQtyLine.LotId);
+                        if (docType.DocumentTypeGroup == DocumentTypeGroupEnum.Purchasing)
+                        {
+                            lot.RemainingQty += lotQtyLine.Quantity;
+                        }
+                        else if (docType.DocumentTypeGroup == DocumentTypeGroupEnum.Sales)
+                        {
+                            lot.RemainingQty -= lotQtyLine.Quantity;
+
+                        }
+
+                    }
+                }
+                data.DocumentProducts.Add(_mapper.Map<DocumentProduct>(product));
+            }
+
+            _mapper.Map<List<DocumentProduct>>(document.DocumentProducts);
+
+            if (document.SourceDocIdsList?.Any()??false)
+            {
+                data.SourceDocIdsList = document.TargetDocIdsList;
+
+                //var transformationStatus = CompareSourceAndTargetProducts(document);
+                foreach(var docId in data.SourceDocIdsList)
+                {
+                    var sourceDoc = await _context.Documents.Where(x => x.Id == docId).FirstOrDefaultAsync();
+
+                }
+            }
+
             lock (_lockObject)
             {
 
-                var maxNumber = _context.Documents.Where(x=>x.CompanyId == companyId).Max(x => (x.SerialNumber)) ?? 0;
+                var maxNumber = _context.Documents.Where(x => x.CompanyId == companyId).Max(x => (x.SerialNumber)) ?? 0;
                 data.SerialNumber = maxNumber + 1;
                 data.Code = data.SerialNumber.ToString().PadLeft(6, '0');
 
@@ -273,7 +350,7 @@ namespace DataNexApi.Controllers
 
             if (dto.CustomerId != null)
             {
-                var customer = await _context.Customers.Where(x => x.Id == dto.CustomerId && x.CompanyId==companyId).FirstOrDefaultAsync();
+                var customer = await _context.Customers.Where(x => x.Id == dto.CustomerId && x.CompanyId == companyId).FirstOrDefaultAsync();
                 dto.CustomerPhone1 = customer.Phone1;
 
             }
@@ -303,9 +380,14 @@ namespace DataNexApi.Controllers
             data.SupplierId = document.SupplierId;
             data.DocumentDateTime = document.DocumentDateTime;
             data.DocumentStatusId = document.DocumentStatusId;
+            data.DocumentSeriesId = document.DocumentSeriesId;
             data.DocumentTotal = document.DocumentTotal;
             data.VatClassId = document.VatClassId;
             data.WarehouseId = document.WarehouseId;
+            data.PaymentMethodId = document.PaymentMethodId;
+            data.ShippingMethodId = document.ShippingMethodId;
+            data.SourceDocIdsList = document.SourceDocIdsList;  
+            data.TargetDocIdsList = document.TargetDocIdsList;
             data.ShippingAddress = document.ShippingAddress;
             data.ShippingRegion = document.ShippingRegion;
             data.ShippingPostalCode = document.ShippingPostalCode;
@@ -314,6 +396,7 @@ namespace DataNexApi.Controllers
             data.ShippingPhone1 = document.ShippingPhone1;
             data.ShippingPhone2 = document.ShippingPhone2;
             data.ShippingEmail = document.ShippingEmail;
+            data.TransfromationStatus = document.TransfromationStatus;
             data.UserText1 = document.UserText1;
             data.UserText2 = document.UserText2;
             data.UserText3 = document.UserText3;
@@ -328,13 +411,14 @@ namespace DataNexApi.Controllers
             data.UserDate4 = document.UserDate4;
             data.CompanyId = companyId;
 
-            //var documentProducts = await _context.DocumentProducts.Include(x=>x.Product).Where(x => x.DocumentId == data.Id).ToListAsync();
+            //var documentProducts = await _context.DocumentProducts.Include(x => x.Product).Where(x => x.DocumentId == data.Id).ToListAsync();
             //decimal total = 0;
             //foreach (var product in documentProducts)
             //{
-            //    total += (decimal)product.Product.RetailPrice*product.Quantity;
+            //    total += (decimal)product.Product.RetailPrice * product.Quantity;
             //}
             //data.DocumentTotal = total;
+            
             try
             {
                 await _context.SaveChangesAsync();
@@ -356,6 +440,64 @@ namespace DataNexApi.Controllers
 
             return Ok(dto);
         }
+
+        [HttpPost("saveTransformedDocument")]
+        public async Task<IActionResult> SaveTransformedDocument(DocumentDto dto)
+        {
+            if (dto.SourceDocIdsList?.Count() == 1)
+            {
+            //    var oldDocument = await _context.Documents.FirstOrDefaultAsync(x => x.Id == dto.SourceDocId);
+            //    var docTypeTransformation = await _context.DocTypeTransformations.FirstOrDefaultAsync(x => x.From == oldDocument.DocumentTypeId && x.To == dto.DocumentTypeId);
+
+            //    if (dto.SourceDocIds?.Count() == 1)
+            //    {
+           //         oldDocument.DocumentStatusId = docTypeTransformation.PrevDocStatusId;
+
+              //  }
+
+               /// oldDocument.TargetDocId = newDocument.Id;
+
+                return Ok(dto);
+            }
+            else
+            {
+                return BadRequest("Not Implemented yet");
+
+            }
+
+        }
+
+
+        [HttpGet("getTransformedDocument/{documentId}/{docSeriesToTransformId}")]
+        public async Task<IActionResult> GetTransformedDocument(Guid documentId, Guid docSeriesToTransformId)
+        {
+            var newDocument = new DocumentDto();
+            var oldDocument = await _context.Documents.FirstOrDefaultAsync(x => x.Id == documentId);
+            if (oldDocument != null) { 
+                newDocument = _mapper.Map<DocumentDto>(oldDocument);
+
+                var docSeries = await _context.DocumentSeries.FirstOrDefaultAsync(x => x.Id == docSeriesToTransformId)?? new DocumentSeries();
+
+                var docTypeTransformation = await _context.DocTypeTransformations.FirstOrDefaultAsync(x => x.From == oldDocument.DocumentTypeId && x.To == docSeries.DocumentTypeId);
+                newDocument.Id = null;
+                newDocument.DocumentDateTime = DateTime.Now;
+                newDocument.DocumentTypeId = docSeries.DocumentTypeId;
+                newDocument.DocumentSeriesId = docSeriesToTransformId;
+                newDocument.DocumentStatusId = docTypeTransformation?.TargetStatusId;
+                newDocument.SourceDocIdsList =new List<Guid>();
+                newDocument.SourceDocIdsList?.Add(documentId);
+                var documentProducts = await _context.DocumentProducts.Include(x=>x.Product).Where(x => x.DocumentId == documentId).ToListAsync();
+
+                newDocument.DocumentProducts = _mapper.Map<List<DocumentProductDto>>(documentProducts);
+
+                return Ok(newDocument);
+            }
+            else
+            {
+                return BadRequest("Something went wrong");
+            }
+        }
+
 
         [HttpDelete("deletebyid/{id}")]
         public async Task<IActionResult> DeleteById(Guid id)
@@ -461,7 +603,7 @@ namespace DataNexApi.Controllers
         {
             Guid companyId = GetCompanyFromHeader();
 
-            var documents = await _context.Customers.Where(x => x.Id == id && x.CompanyId==companyId).Select(x => x.Documents).FirstOrDefaultAsync();
+            var documents = await _context.Customers.Where(x => x.Id == id && x.CompanyId == companyId).Select(x => x.Documents).FirstOrDefaultAsync();
 
             if (documents != null)
             {
@@ -487,6 +629,12 @@ namespace DataNexApi.Controllers
             }
 
             return Ok(documents);
+        }
+
+        private async Task<TransformationStatusEnum> CompareSourceAndTargetProducts()
+        {
+
+            return TransformationStatusEnum.None;
         }
     }
 }

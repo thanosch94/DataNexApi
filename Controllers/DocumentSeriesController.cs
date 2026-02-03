@@ -55,6 +55,33 @@ namespace DataNexApi.Controllers
             var data = await _context.DocumentSeries.Where(x => x.DocumentTypeId == id && x.CompanyId == companyId).ToListAsync();
 
             return Ok(data);
+        }               
+
+        [HttpGet("getSeriesToTransformByDocumentTypeId/{id}")]
+        public async Task<IActionResult> GetSeriesToTransformByDocumentTypeId(Guid id)
+        {
+            Guid companyId = GetCompanyFromHeader();
+            var series = new List<DocumentSeries>();
+            //Get the Document type
+            var docType = await _context.DocumentTypes.Where(x => x.Id == id && x.CompanyId == companyId).FirstOrDefaultAsync();
+            if(docType != null)
+            {
+                //Find all the types to which can be transformed
+                var transformations = await _context.DocTypeTransformations.Where(x=>x.From==docType.Id).ToListAsync();
+
+                if(transformations.Count > 0)
+                {
+                    //Foreach document type we find its document series and add them to the list that we will return
+                    foreach(var transformation in transformations)
+                    {
+                        var transformationSeries = await _context.DocumentSeries.Where(x => x.DocumentTypeId == transformation.To).ToListAsync();
+                        series.AddRange(transformationSeries);
+                    }
+                }
+            }
+            var dataToReturn = _mapper.Map<DocumentSeriesDto[]>(series);
+
+            return Ok(dataToReturn);
         }
 
 

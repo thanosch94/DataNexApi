@@ -98,8 +98,10 @@ namespace DataNexApi.Controllers
             data.ProductId = documentProduct.ProductId;
             data.Price = documentProduct.ProductRetailPrice;
             data.Quantity = documentProduct.Quantity;
+            data.DiscountPercentage = documentProduct.DiscountPercentage;
             data.VatAmount = documentProduct.VatAmount;
             data.TotalVatAmount = documentProduct.TotalVatAmount;
+            data.TotalDiscount = documentProduct.TotalDiscount;
             data.TotalPrice = documentProduct.TotalPrice;
             data.ProductSizeId = documentProduct.ProductSizeId;
             data.UserAdded = actionUser.Id;
@@ -211,8 +213,10 @@ namespace DataNexApi.Controllers
             data.VatAmount = documentProduct.VatAmount;
             data.TotalVatAmount = documentProduct.TotalVatAmount;
             data.Quantity = documentProduct.Quantity;
+            data.DiscountPercentage = documentProduct.DiscountPercentage;
             data.TotalPrice = documentProduct.TotalPrice;
             data.ProductSizeId = documentProduct.ProductSizeId;
+            data.TotalDiscount = documentProduct.TotalDiscount;
 
 
             var documentProductLotsQuantities = documentProduct.DocumentProductLotsQuantities.Select(x => new DocumentProductLotQuantity()
